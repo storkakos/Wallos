@@ -21,7 +21,8 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 
 // 12 projection buckets, starting next month
 $projectionBuckets = [];
-$projectionStart = new DateTime('first day of next month');
+// From midnight, or a payment due on the 1st falls before the first bucket starts
+$projectionStart = new DateTime('first day of next month midnight');
 $projectionEnd = (clone $projectionStart)->modify('+12 months');
 for ($i = 0; $i < 12; $i++) {
     $bucketDate = (clone $projectionStart)->modify("+$i months");

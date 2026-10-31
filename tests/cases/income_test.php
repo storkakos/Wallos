@@ -241,6 +241,13 @@ wallos_test('notifications and calendar exports label income', function () {
     }
 });
 
+wallos_test('the projection counts payments due on the first of the month', function () {
+    $start = new DateTime('first day of next month midnight');
+
+    assert_same('00:00:00', $start->format('H:i:s'), 'the first bucket starts at midnight');
+    assert_contains("new DateTime('first day of next month midnight')", income_source('includes/stats_extra_calculations.php'), 'the statistics use it');
+});
+
 wallos_test('the income strings exist in the source language', function () {
     $i18n = [];
     include WALLOS_ROOT . '/includes/i18n/en.php';
