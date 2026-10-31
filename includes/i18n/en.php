@@ -552,6 +552,7 @@ $i18n = [
     "expense" => "Expense",
     "income" => "Income",
     "income_and_expenses" => "Income and Expenses",
+    "upcoming_income" => "Upcoming Income",
     "monthly_expenses" => "Monthly Expenses",
     "yearly_expenses" => "Yearly Expenses",
     "total_income" => "Total Income",

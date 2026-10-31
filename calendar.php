@@ -307,7 +307,7 @@ if ($weekStartsSunday) {
                         <?php } ?>
                         <span class="calendar-event-name"><?= htmlspecialchars($payment['name']) ?></span>
                       </span>
-                      <span class="calendar-event-price"><?= ($isIncome ? '+' : '') . formatCalendarPrice($payment['price'], $payment['currency_id'], $calendarCurrencies) ?></span>
+                      <span class="calendar-event-price"><?= ($isIncome ? '+' : '-') . formatCalendarPrice($payment['price'], $payment['currency_id'], $calendarCurrencies) ?></span>
                     </div>
                   <?php } ?>
                 </div>

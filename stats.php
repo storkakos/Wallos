@@ -306,10 +306,10 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
       <div class="statistics">
         <?php foreach ([
                 ['monthly_income', $totalIncomePerMonth, 'income'],
-                ['monthly_expenses', $totalCostPerMonth, 'expense'],
+                ['monthly_expenses', 0 - $totalCostPerMonth, 'expense'],
                 ['monthly_balance', $balancePerMonth, $balancePerMonth < 0 ? 'negative' : 'income'],
                 ['yearly_income', $totalIncomePerYear, 'income'],
-                ['yearly_expenses', $totalCostPerYear, 'expense'],
+                ['yearly_expenses', 0 - $totalCostPerYear, 'expense'],
                 ['yearly_balance', $balancePerYear, $balancePerYear < 0 ? 'negative' : 'income'],
             ] as [$tileLabel, $tileValue, $tileClass]) { ?>
           <div class="statistic">

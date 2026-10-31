@@ -154,7 +154,7 @@ function renderSubscriptionDetails(subscription) {
   }
 
   const detailsPrice = document.querySelector('#details-price');
-  detailsPrice.textContent = (isIncome ? '+' : '') + detailsFormatPrice(subscription.price, subscription.currency_id);
+  detailsPrice.textContent = (isIncome ? '+' : '-') + detailsFormatPrice(subscription.price, subscription.currency_id);
   detailsPrice.classList.toggle('income', isIncome);
   detailsPrice.classList.toggle('expense', !isIncome);
   document.querySelectorAll('#subscription-details [data-income-label]').forEach((element) => {
