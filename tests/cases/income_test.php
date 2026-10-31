@@ -217,7 +217,7 @@ wallos_test('the statistics project the balance and colour it', function () {
     assert_contains("\$balancePerMonth < 0 ? 'negative' : 'income'", $stats, 'a negative balance is marked');
     assert_contains('"projectedBalanceChart"', $stats, 'the balance chart is present');
     assert_contains('null, "balance");', $stats, 'and colours by sign');
-    assert_contains("['yearly_expenses', 0 - \$totalCostPerYear, 'expense']", $stats, 'expenses have their own tile, shown as negative');
+    assert_contains("['yearly_expenses', 0 - \$totalCostPerYear, \$totalCostPerYear > 0 ? 'expense' : '']", $stats, 'expenses have their own tile, shown as negative');
 });
 
 wallos_test('the form rewords itself for income', function () {

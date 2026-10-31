@@ -371,10 +371,10 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
                     <div class="dashboard-subscriptions-list">
                         <?php foreach ([
                 ['monthly_income', $totalIncomePerMonth, 'income'],
-                ['monthly_expenses', 0 - $totalCostPerMonth, 'expense'],
+                ['monthly_expenses', 0 - $totalCostPerMonth, $totalCostPerMonth > 0 ? 'expense' : ''],
                 ['monthly_balance', $balancePerMonth, $balancePerMonth < 0 ? 'negative' : 'income'],
                 ['yearly_income', $totalIncomePerYear, 'income'],
-                ['yearly_expenses', 0 - $totalCostPerYear, 'expense'],
+                ['yearly_expenses', 0 - $totalCostPerYear, $totalCostPerYear > 0 ? 'expense' : ''],
                 ['yearly_balance', $balancePerYear, $balancePerYear < 0 ? 'negative' : 'income'],
             ] as [$tileLabel, $tileValue, $tileClass]) { ?>
                             <div class="subscription-item thin">
