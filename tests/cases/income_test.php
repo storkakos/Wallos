@@ -153,7 +153,7 @@ wallos_test('every other cost output excludes income', function () {
     }
 
     assert_contains("\$subscription['type'] === 'income'", income_source('calendar.php'), 'calendar totals');
-    assert_contains("\$subscription['type'] === 'income'", income_source('includes/upcoming_cancellations.php'), 'potential savings');
+    assert_contains("(\$subscription['type'] ?? 'expense') === 'income'", income_source('includes/upcoming_cancellations.php'), 'potential savings');
 });
 
 wallos_test('the income strings exist in the source language', function () {
