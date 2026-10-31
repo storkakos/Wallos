@@ -1,11 +1,12 @@
 services:
   wallos:
     container_name: wallos
-    image: bellamy/wallos:latest
+    build: .
+    image: wallos-income:local
     ports:
       - "8282:80/tcp"
     environment:
-      TZ: 'America/Toronto'
+      TZ: 'Europe/Berlin'
       # Optional OIDC environment variables
       # OIDC_ENABLED: "true"
       # OIDC_PROVIDER_NAME: "Authelia"
