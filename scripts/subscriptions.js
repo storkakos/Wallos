@@ -142,6 +142,26 @@ function initMultiSelects() {
   });
 }
 
+// Selecting income only changes the wording: the fields stay the same.
+function applyEntryTypeLabels() {
+  const isIncome = document.querySelector("#type").value === "income";
+  document.querySelectorAll("#subs-form [data-income-label]").forEach((element) => {
+    element.dataset.expenseLabel ??= element.textContent;
+    element.textContent = isIncome ? element.dataset.incomeLabel : element.dataset.expenseLabel;
+  });
+  document.querySelectorAll("#subs-form [data-income-placeholder]").forEach((element) => {
+    element.dataset.expensePlaceholder ??= element.placeholder;
+    element.placeholder = isIncome ? element.dataset.incomePlaceholder : element.dataset.expensePlaceholder;
+  });
+  const formTitle = document.querySelector("#form-title");
+  const isEdit = document.querySelector("#id").value !== "";
+  if (isIncome) {
+    formTitle.textContent = isEdit ? formTitle.dataset.editIncome : formTitle.dataset.addIncome;
+  } else {
+    formTitle.textContent = translate(isEdit ? 'edit_subscription' : 'add_subscription');
+  }
+}
+
 function resetForm() {
   const id = document.querySelector("#id");
   id.value = "";
@@ -179,6 +199,7 @@ function resetForm() {
   const deleteButton = document.querySelector("#deletesub");
   deleteButton.style = 'display: none';
   deleteButton.removeAttribute("onClick");
+  applyEntryTypeLabels();
 }
 
 // Picks the logo filename that reads well on the theme currently in use,
@@ -207,6 +228,7 @@ function fillEditFormFields(subscription) {
   id.value = subscription.id;
   const typeSelect = document.querySelector("#type");
   typeSelect.value = subscription.type;
+  applyEntryTypeLabels();
   const name = document.querySelector("#name");
   name.value = subscription.name;
   const price = document.querySelector("#price");

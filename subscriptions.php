@@ -368,14 +368,15 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
 </section>
 <section class="subscription-form" id="subscription-form">
   <header>
-    <h3 id="form-title"><?= translate('add_subscription', $i18n) ?></h3>
+    <h3 id="form-title" data-add-income="<?= translate('add_income', $i18n) ?>"
+      data-edit-income="<?= translate('edit_income', $i18n) ?>"><?= translate('add_subscription', $i18n) ?></h3>
     <span class="fa-solid fa-xmark close-form" onClick="closeAddSubscription()"></span>
   </header>
   <form action="endpoints/subscription/add.php" method="post" id="subs-form">
 
     <div class="form-group">
       <label for="type"><?= translate('entry_type', $i18n) ?></label>
-      <select id="type" name="type">
+      <select id="type" name="type" onchange="applyEntryTypeLabels()">
         <option value="expense"><?= translate('expense', $i18n) ?></option>
         <option value="income"><?= translate('income', $i18n) ?></option>
       </select>
@@ -384,6 +385,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
     <div class="form-group-inline">
       <input type="text" id="name" name="name" autocomplete="off"
         placeholder="<?= translate('subscription_name', $i18n) ?>"
+        data-income-placeholder="<?= translate('income_name', $i18n) ?>"
         onchange="setSearchButtonStatus()" onkeypress="this.onchange();" onpaste="this.onchange();"
         oninput="this.onchange();" required>
       <label for="logo" class="logo-preview">
@@ -424,7 +426,8 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
 
     <div class="form-group-inline">
       <input type="number" step="0.01" id="price" name="price" autocomplete="off"
-        placeholder="<?= translate('price', $i18n) ?>" required>
+        placeholder="<?= translate('price', $i18n) ?>"
+        data-income-placeholder="<?= translate('amount', $i18n) ?>" required>
       <select id="currency" name="currency_id" placeholder="<?= translate('add_subscription', $i18n) ?>">
         <?php
         foreach ($currencies as $currency) {
@@ -440,7 +443,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
     <div class="form-group">
       <div class="inline">
         <div class="split66">
-          <label for="cycle"><?= translate('payment_every', $i18n) ?></label>
+          <label for="cycle" data-income-label="<?= translate('received_every', $i18n) ?>"><?= translate('payment_every', $i18n) ?></label>
           <div class="inline">
             <select id="frequency" name="frequency" placeholder="<?= translate('frequency', $i18n) ?>">
               <?php
@@ -489,8 +492,8 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
         </button>
         <div class="split50">
           <label for="next_payment" class="split-label">
-            <span id="next-payment-label-recurring"><?= translate('next_payment', $i18n) ?></span>
-            <span id="next-payment-label-onetime" style="display:none"><?= translate('payment_date', $i18n) ?></span>
+            <span id="next-payment-label-recurring" data-income-label="<?= translate('next_income_date', $i18n) ?>"><?= translate('next_payment', $i18n) ?></span>
+            <span id="next-payment-label-onetime" style="display:none" data-income-label="<?= translate('income_date', $i18n) ?>"><?= translate('payment_date', $i18n) ?></span>
             <div id="autofill-next-payment-button" class="autofill-next-payment hideOnDesktop"
               title="<?= translate('calculate_next_payment_date', $i18n) ?>" onClick="autoFillNextPaymentDate(event)">
               <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -506,7 +509,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
     <div class="form-group">
       <div class="inline">
         <div class="split50">
-          <label for="payment_method"><?= translate('payment_method', $i18n) ?></label>
+          <label for="payment_method" data-income-label="<?= translate('received_via', $i18n) ?>"><?= translate('payment_method', $i18n) ?></label>
           <select id="payment_method" name="payment_method_id">
             <?php
             foreach ($payment_methods as $payment) {
@@ -520,7 +523,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
           </select>
         </div>
         <div class="split50">
-          <label for="payer_user_toggle"><?= translate('paid_by', $i18n) ?></label>
+          <label for="payer_user_toggle" data-income-label="<?= translate('received_by', $i18n) ?>"><?= translate('paid_by', $i18n) ?></label>
           <div class="multi-select" id="payer_user_select" data-placeholder="<?= translate('none', $i18n) ?>">
             <button type="button" class="multi-select-toggle" id="payer_user_toggle" aria-haspopup="listbox"
               aria-expanded="false" aria-controls="payer_user_options">
@@ -571,7 +574,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
 
     <div class="form-group-inline grow" id="notifications-group">
       <input type="checkbox" id="notifications" name="notifications" onchange="toggleNotificationDays()">
-      <label for="notifications" class="grow"><?= translate('enable_notifications', $i18n) ?></label>
+      <label for="notifications" class="grow" data-income-label="<?= translate('enable_income_notifications', $i18n) ?>"><?= translate('enable_notifications', $i18n) ?></label>
     </div>
 
     <div class="form-group" id="notify-days-cancellation-group">
@@ -592,7 +595,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
           </select>
         </div>
         <div class="split33 mobile-split-50">
-          <label for="cancellation_date"><?= translate('cancellation_notification', $i18n) ?></label>
+          <label for="cancellation_date" data-income-label="<?= translate('end_date_reminder', $i18n) ?>"><?= translate('cancellation_notification', $i18n) ?></label>
           <div class="date-wrapper">
             <input type="date" id="cancellation_date" name="cancellation_date" autocomplete="off">
           </div>

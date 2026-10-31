@@ -119,7 +119,7 @@ wallos_test('both places that build the list pass the type on, and the list mark
 });
 
 wallos_test('the form offers the type and the script keeps it in step', function () {
-    assert_contains('<select id="type" name="type">', income_source('subscriptions.php'), 'the selector exists');
+    assert_contains('<select id="type" name="type"', income_source('subscriptions.php'), 'the selector exists');
     $script = income_source('scripts/subscriptions.js');
     assert_contains('typeSelect.value = "expense";', $script, 'resetForm() goes back to expense');
     assert_contains('typeSelect.value = subscription.type;', $script, 'fillEditFormFields() loads the stored type');
@@ -198,6 +198,16 @@ wallos_test('the statistics project the balance and colour it', function () {
     assert_contains('loadBarGraph("projectedBalanceChart"', $stats, 'the chart is drawn');
     assert_contains("\$balancePerMonth < 0 ? 'negative' : 'income'", $stats, 'a negative balance is marked');
     assert_contains('statistics two-columns', $stats, 'the tiles stay together');
+});
+
+wallos_test('the form rewords itself for income', function () {
+    $form = income_source('subscriptions.php');
+    assert_same(7, substr_count($form, 'data-income-label='), 'every expense-worded label has an income one');
+    assert_same(2, substr_count($form, 'data-income-placeholder='), 'and so do the placeholders');
+    assert_contains('onchange="applyEntryTypeLabels()"', $form, 'switching the type rewords the form');
+
+    $script = str_replace("\r\n", "\n", income_source('scripts/subscriptions.js'));
+    assert_contains("typeSelect.value = subscription.type;\n  applyEntryTypeLabels();", $script, 'the edit form rewords itself after loading the type');
 });
 
 wallos_test('the income strings exist in the source language', function () {
