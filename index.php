@@ -158,16 +158,24 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     <h1><?= translate('hello', $i18n) ?> <?= htmlspecialchars($first_name) ?></h1>
 
     <?php
-    // If there are overdue subscriptions, display them
-    if ($hasOverdueSubscriptions) {
+    // If there are overdue subscriptions, display them. Income that has not
+    // arrived yet is not a renewal, so it gets a heading of its own.
+    $overdueGroups = [
+        'overdue_renewals' => array_filter($overdueSubscriptions, fn($overdue) => $overdue['type'] !== 'income'),
+        'income_not_received' => array_filter($overdueSubscriptions, fn($overdue) => $overdue['type'] === 'income'),
+    ];
+    foreach ($overdueGroups as $overdueTitle => $overdueGroup) {
+        if (empty($overdueGroup)) {
+            continue;
+        }
         ?>
         <div class="overdue-subscriptions">
-            <h2><?= translate('overdue_renewals', $i18n) ?></h2>
+            <h2><?= translate($overdueTitle, $i18n) ?></h2>
             <div class="dashboard-subscriptions-container">
                 <div class="dashboard-subscriptions-list">
                     <?php
 
-                    foreach ($overdueSubscriptions as $subscription) {
+                    foreach ($overdueGroup as $subscription) {
                         $subscriptionName = htmlspecialchars($subscription['name']);
                         $subscriptionPrice = $subscription['price'];
                         $subscriptionCurrency = $subscription['currency_id'];

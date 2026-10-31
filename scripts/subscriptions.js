@@ -372,7 +372,9 @@ function deleteSubscription(event, id) {
   event.stopPropagation();
   event.preventDefault();
 
-  if (!confirm(translate('confirm_delete_subscription'))) {
+  const isIncome = document.querySelector(`.subscription[data-id="${id}"]`)?.classList.contains('income');
+  const question = isIncome ? document.querySelector("#form-title").dataset.confirmDeleteIncome : translate('confirm_delete_subscription');
+  if (!confirm(question)) {
     return;
   }
 

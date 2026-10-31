@@ -119,6 +119,11 @@ function sortSubscriptionsByPrice(&$print, $disabledToBottom)
                 return $byInactive;
             }
         }
+        // Income follows the expenses, or a salary would outrank every bill.
+        $byType = (($a['type'] ?? 'expense') === 'income') <=> (($b['type'] ?? 'expense') === 'income');
+        if ($byType !== 0) {
+            return $byType;
+        }
         return ($b['sort_price'] ?? $b['price'] ?? 0) <=> ($a['sort_price'] ?? $a['price'] ?? 0);
     });
 }
@@ -192,21 +197,25 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
     }
 
     // One-time purchases always go to the bottom regardless of sort order
-    usort($subscriptions, fn($a, $b) => ($a['one_time'] ? 1 : 0) - ($b['one_time'] ? 1 : 0));
+    // and one-time income follows the purchases
+    usort($subscriptions, fn($a, $b) => [$a['one_time'], $a['one_time'] && $a['type'] === 'income'] <=> [$b['one_time'], $b['one_time'] && $b['type'] === 'income']);
 
     $currentCategory = 0;
     $currentPayerUserId = 0;
     $currentPaymentMethodId = 0;
-    $oneTimeSectionShown = false;
+    $oneTimeSectionIncome = null;
     foreach ($subscriptions as $subscription) {
-        if ($subscription['one_time'] && !$oneTimeSectionShown) {
+        $isIncome = $subscription['type'] === 'income';
+        if ($subscription['one_time'] && $oneTimeSectionIncome !== $isIncome) {
             ?>
             <div class="subscription-list-title">
-                <?= translate('lifetime_purchases', $i18n) ?>
+                <?= translate($isIncome ? 'one_time_income' : 'lifetime_purchases', $i18n) ?>
             </div>
             <?php
-            $oneTimeSectionShown = true;
+            $oneTimeSectionIncome = $isIncome;
         }
+        $editLabel = translate($isIncome ? 'edit_income' : 'edit_subscription', $i18n);
+        $renewLabel = translate($isIncome ? 'mark_received' : 'renew', $i18n);
         if ($sort == "category_id" && $subscription['category_id'] != $currentCategory) {
             ?>
             <div class="subscription-list-title">
@@ -277,7 +286,6 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
             if ($subscription['auto_renew'] != 1) {
                 $subscriptionExtraClasses .= " manual";
             }
-            $isIncome = $subscription['type'] === 'income';
             if ($isIncome) {
                 $subscriptionExtraClasses .= " income";
             }
@@ -353,10 +361,10 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="actions">
-                        <li class="edit" title="<?= translate('edit_subscription', $i18n) ?>"
+                        <li class="edit" title="<?= $editLabel ?>"
                             onClick="openEditSubscription(event, <?= $subscription['id'] ?>)">
                             <i class="fa-solid fa-pen-to-square"></i>
-                            <?= translate('edit_subscription', $i18n) ?>
+                            <?= $editLabel ?>
                         </li>
                         <li class="delete" title="<?= translate('delete', $i18n) ?>"
                             onClick="deleteSubscription(event, <?= $subscription['id'] ?>)">
@@ -371,10 +379,10 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
                         <?php
                         if ($subscription['auto_renew'] != 1 && !$subscription['one_time']) {
                             ?>
-                            <li class="renew" title="<?= translate('renew', $i18n) ?>"
+                            <li class="renew" title="<?= $renewLabel ?>"
                                 onClick="renewSubscription(event, <?= $subscription['id'] ?>)">
                                 <i class="fa-solid fa-rotate-right"></i>
-                                <?= translate('renew', $i18n) ?>
+                                <?= $renewLabel ?>
                             </li>
                             <?php
                         }
@@ -406,7 +414,7 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
                         <button type="button" class="back-action"
                             onClick="unflipCard(<?= $subscription['id'] ?>); renewSubscription(event, <?= $subscription['id'] ?>)">
                             <i class="fa-solid fa-rotate-right"></i>
-                            <?= translate('renew', $i18n) ?>
+                            <?= $renewLabel ?>
                         </button>
                         <?php
                     }

@@ -7,6 +7,8 @@
 require_once WALLOS_ROOT . '/includes/budget_period_calculations.php';
 require_once WALLOS_ROOT . '/includes/currency_rates.php';
 require_once WALLOS_ROOT . '/includes/upcoming_payments.php';
+require_once WALLOS_ROOT . '/includes/upcoming_cancellations.php';
+require_once __DIR__ . '/price_sort_test.php';
 
 /**
  * Inserts a monthly item due tomorrow; omits type when it is null, so the
@@ -220,7 +222,7 @@ wallos_test('the statistics project the balance and colour it', function () {
 
 wallos_test('the form rewords itself for income', function () {
     $form = income_source('subscriptions.php');
-    assert_same(7, substr_count($form, 'data-income-label='), 'every expense-worded label has an income one');
+    assert_same(10, substr_count($form, 'data-income-label='), 'every expense-worded label has an income one');
     assert_same(2, substr_count($form, 'data-income-placeholder='), 'and so do the placeholders');
     assert_contains('onchange="applyEntryTypeLabels()"', $form, 'switching the type rewords the form');
 
@@ -264,6 +266,44 @@ wallos_test('the projection counts payments due on the first of the month', func
 
     assert_same('00:00:00', $start->format('H:i:s'), 'the first bucket starts at midnight');
     assert_contains("new DateTime('first day of next month midnight')", income_source('includes/stats_extra_calculations.php'), 'the statistics use it');
+});
+
+wallos_test('income stays out of cancellations and replacements', function () {
+    $db = wallos_test_open_database();
+    wallos_test_create_user($db, 1, 'alice');
+    $incomeId = income_insert($db, 'Ending job', 2000, 'income');
+    $expenseId = income_insert($db, 'Old gym', 30, 'expense');
+    $date = (new DateTime('+10 days'))->format('Y-m-d');
+    $db->exec("UPDATE subscriptions SET cancellation_date = '$date' WHERE id IN ($incomeId, $expenseId)");
+
+    assert_same(['Old gym'], array_column(get_upcoming_cancellations($db, 1), 'name'), 'only the expense is a cancellation');
+    assert_contains("\$sub['type'] !== 'income'", income_source('subscriptions.php'), 'income cannot replace an expense');
+    $db->close();
+});
+
+wallos_test('sorting by price keeps income after the expenses', function () {
+    $rows = [
+        ['name' => 'Salary', 'type' => 'income', 'sort_price' => 3000],
+        ['name' => 'Netflix', 'type' => 'expense', 'sort_price' => 12],
+        ['name' => 'Rent', 'type' => 'expense', 'sort_price' => 800],
+        ['name' => 'Side job', 'type' => 'income', 'sort_price' => 50],
+    ];
+
+    price_sort_load_helpers();
+    sortSubscriptionsByPrice($rows, false);
+
+    assert_same(['Rent', 'Netflix', 'Salary', 'Side job'], array_column($rows, 'name'), 'each type is ranked on its own');
+});
+
+wallos_test('income has its own overdue, one-time and action wording', function () {
+    $dashboard = income_source('index.php');
+    assert_contains("'income_not_received' => array_filter(", $dashboard, 'overdue income has its own heading');
+    assert_contains('foreach ($overdueGroup as $subscription) {', $dashboard, 'each group lists its own entries');
+
+    $list = income_source('includes/list_subscriptions.php');
+    assert_contains("\$isIncome ? 'one_time_income' : 'lifetime_purchases'", $list, 'one-time income is not a purchase');
+    assert_contains("\$isIncome ? 'mark_received' : 'renew'", $list, 'income is received, not renewed');
+    assert_contains('dataset.confirmDeleteIncome', income_source('scripts/subscriptions.js'), 'the delete question says income');
 });
 
 wallos_test('the income strings exist in the source language', function () {
