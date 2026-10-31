@@ -306,6 +306,15 @@ wallos_test('income has its own overdue, one-time and action wording', function 
     assert_contains('dataset.confirmDeleteIncome', income_source('scripts/subscriptions.js'), 'the delete question says income');
 });
 
+wallos_test('the statistics filter by type, count income and estimate all-time income', function () {
+    $stats = income_source('includes/stats_calculations.php');
+    assert_contains("\$filteredType === 'income' || \$filteredType === 'expense'", $stats, 'the filter value is whitelisted before it reaches the query');
+    assert_contains('$activeIncome++;', $stats, 'active income is counted');
+    assert_contains('data-entrytype="<?= $entryType ?>"', income_source('stats.php'), 'the filter is offered');
+    assert_contains("hasAttribute('data-entrytype')", income_source('scripts/stats.js'), 'the script applies it');
+    assert_contains('$totalLifetimeIncome += $monthlyPrice', income_source('includes/stats_extra_calculations.php'), 'all-time income is estimated');
+});
+
 wallos_test('the income strings exist in the source language', function () {
     $i18n = [];
     include WALLOS_ROOT . '/includes/i18n/en.php';

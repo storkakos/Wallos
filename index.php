@@ -517,6 +517,15 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
                         </div>
                     </div>
 
+                    <?php if ($activeIncome > 0) { ?>
+                        <div class="subscription-item thin">
+                            <p class="subscription-item-title"><?= translate('active_income', $i18n) ?></p>
+                            <div class="subscription-item-info">
+                                <p class="subscription-item-value"><?= $activeIncome ?></p>
+                            </div>
+                        </div>
+                    <?php } ?>
+
                     <?php if (isset($totalCostPerMonth) && $totalIncomePerMonth <= 0) { ?>
                         <div class="subscription-item thin">
                             <p class="subscription-item-title"><?= translate('monthly_cost', $i18n) ?></p>

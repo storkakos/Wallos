@@ -105,6 +105,7 @@ $mostExpensiveSubscription['price'] = 0;
 $amountDueThisMonth = 0;
 $totalCostPerMonth = 0;
 $totalIncomePerMonth = 0;
+$activeIncome = 0;
 $totalSavingsPerMonth = 0;
 $totalCostsInReplacementsPerMonth = 0;
 
@@ -150,6 +151,12 @@ if (isset($_GET['payment']) && $_GET['payment'] !== '') {
             $statsSubtitleParts[] = $paymentMethodsCount[$pid]['name'];
         }
     }
+}
+
+$filteredType = $_GET['type'] ?? '';
+if ($filteredType === 'income' || $filteredType === 'expense') {
+    $conditions[] = "type = '$filteredType'";
+    $statsSubtitleParts[] = translate($filteredType, $i18n);
 }
 
 $conditions[] = "user_id = :userId";
@@ -229,6 +236,7 @@ if ($result) {
             if ($subscription['type'] === 'income') {
                 if ($inactive == 0 && $cycle != 5) {
                     $totalIncomePerMonth += $price;
+                    $activeIncome++;
                 }
                 continue;
             }

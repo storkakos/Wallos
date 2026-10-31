@@ -137,7 +137,19 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
         }
         ?>
         <?php
-        if (isset($_GET['member']) || isset($_GET['category']) || isset($_GET['payment'])) {
+        ?>
+        <div class="filtermenu-submenu">
+          <div class="filter-title" onClick="toggleSubMenu('type')"><?= translate("entry_type", $i18n) ?></div>
+          <div class="filtermenu-submenu-content" id="filter-type">
+            <?php foreach (['expense', 'income'] as $entryType) { ?>
+              <div class="filter-item <?= ($_GET['type'] ?? '') === $entryType ? 'selected' : '' ?>" data-entrytype="<?= $entryType ?>">
+                <?= translate($entryType, $i18n) ?>
+              </div>
+            <?php } ?>
+          </div>
+        </div>
+        <?php
+        if (isset($_GET['member']) || isset($_GET['category']) || isset($_GET['payment']) || isset($_GET['type'])) {
           ?>
           <div class="filtermenu-submenu">
             <div class="filter-title filter-clear" onClick="clearFilters()">
@@ -205,7 +217,7 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
   $showBudgetSection = ($showMonthlyStats && (isset($monthlyBudgetUsed) || isset($monthlyBudgetLeft) || isset($monthlyOverBudgetAmount) || $showVsMonthlyBudgetGraph))
     || ($showPeriodStats && (isset($periodBudgetUsed) || isset($periodBudgetLeft) || isset($periodOverBudgetAmount) || $showVsPeriodBudgetGraph));
   $showSplitSection = $showMemberCostGraph || $showCategoryCostGraph || $showPaymentMethodsGraph || $showCycleGraph || $showCurrencyGraph || $showHistogramGraph;
-  $showHistorySection = $totalLifetimeSpend > 0 || $oldestSubscription !== null || $averageSubscriptionAge !== null || $showLifetimeGraph || $showYearlyNewGraph;
+  $showHistorySection = $totalLifetimeSpend > 0 || $totalLifetimeIncome > 0 || $oldestSubscription !== null || $averageSubscriptionAge !== null || $showLifetimeGraph || $showYearlyNewGraph;
   ?>
 
   <section class="stats-section">
@@ -215,12 +227,22 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
         <span><?= $activeSubscriptions ?></span>
         <div class="title"><?= translate('active_subscriptions', $i18n) ?></div>
       </div>
+      <?php
+      if ($activeIncome > 0) {
+        ?>
+        <div class="statistic">
+          <span><?= $activeIncome ?></span>
+          <div class="title"><?= translate('active_income', $i18n) ?></div>
+        </div>
+        <?php
+      }
+      ?>
       <div class="statistic">
-        <span class="expense"><?= CurrencyFormatter::format($totalCostPerMonth, $code) ?></span>
+        <span class="<?= $totalCostPerMonth > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($totalCostPerMonth, $code) ?></span>
         <div class="title"><?= translate('monthly_cost', $i18n) ?></div>
       </div>
       <div class="statistic">
-        <span class="expense"><?= CurrencyFormatter::format($totalCostPerYear, $code) ?></span>
+        <span class="<?= $totalCostPerYear > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($totalCostPerYear, $code) ?></span>
         <div class="title"><?= translate('yearly_cost', $i18n) ?></div>
       </div>
       <?php
@@ -234,11 +256,11 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
       }
       ?>
       <div class="statistic">
-        <span class="expense"><?= CurrencyFormatter::format($averageSubscriptionCost, $code) ?></span>
+        <span class="<?= $averageSubscriptionCost > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($averageSubscriptionCost, $code) ?></span>
         <div class="title"><?= translate('average_monthly', $i18n) ?></div>
       </div>
       <div class="statistic short">
-        <span class="expense"><?= CurrencyFormatter::format($mostExpensiveSubscription['price'], $code) ?></span>
+        <span class="<?= $mostExpensiveSubscription['price'] > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($mostExpensiveSubscription['price'], $code) ?></span>
         <div class="title"><?= translate('most_expensive', $i18n) ?></div>
         <?php
         if (isset($mostExpensiveSubscription['logo']) && $mostExpensiveSubscription['logo'] != '') {
@@ -282,7 +304,7 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
       }
       ?>
       <div class="statistic">
-        <span class="expense"><?= CurrencyFormatter::format($amountDueThisMonth, $code) ?></span>
+        <span class="<?= $amountDueThisMonth > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($amountDueThisMonth, $code) ?></span>
         <div class="title"><?= translate('amount_due', $i18n) ?></div>
       </div>
       <?php
@@ -585,10 +607,18 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
     <section class="stats-section">
       <h2><?= translate('history_and_lifetime', $i18n) ?></h2>
       <?php
-      if ($totalLifetimeSpend > 0 || $oldestSubscription !== null || $averageSubscriptionAge !== null) {
+      if ($totalLifetimeSpend > 0 || $totalLifetimeIncome > 0 || $oldestSubscription !== null || $averageSubscriptionAge !== null) {
         ?>
         <div class="statistics">
           <?php
+          if ($totalLifetimeIncome > 0) {
+            ?>
+            <div class="statistic">
+              <span class="income"><?= CurrencyFormatter::format($totalLifetimeIncome, $code) ?></span>
+              <div class="title"><?= translate('all_time_income', $i18n) ?></div>
+            </div>
+            <?php
+          }
           if ($totalLifetimeSpend > 0) {
             ?>
             <div class="statistic">

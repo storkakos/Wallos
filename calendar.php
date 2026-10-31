@@ -349,11 +349,11 @@ if ($weekStartsSunday) {
           <div class="title"><?= translate("active_subscriptions", $i18n) ?></div>
         </div>
         <div class="statistic">
-          <span class="expense"><?= CurrencyFormatter::format($totalCostThisMonth, $code) ?></span>
+          <span class="<?= $totalCostThisMonth > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($totalCostThisMonth, $code) ?></span>
           <div class="title"><?= translate("total_cost", $i18n) ?></div>
         </div>
         <div class="statistic">
-          <span class="expense"><?= CurrencyFormatter::format($amountDueThisMonth, $code) ?></span>
+          <span class="<?= $amountDueThisMonth > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($amountDueThisMonth, $code) ?></span>
           <div class="title"><?= translate("amount_due", $i18n) ?></div>
         </div>
         <?php if ($totalIncomeThisMonth > 0) { ?>
