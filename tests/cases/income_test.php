@@ -310,6 +310,7 @@ wallos_test('the statistics filter by type, count income and estimate all-time i
     $stats = income_source('includes/stats_calculations.php');
     assert_contains("\$filteredType === 'income' || \$filteredType === 'expense'", $stats, 'the filter value is whitelisted before it reaches the query');
     assert_contains('$activeIncome++;', $stats, 'active income is counted');
+    assert_contains('if (count($conditions) > 1) {', $stats, 'the account-wide cost history is hidden while filtering');
     assert_contains('data-entrytype="<?= $entryType ?>"', income_source('stats.php'), 'the filter is offered');
     assert_contains("hasAttribute('data-entrytype')", income_source('scripts/stats.js'), 'the script applies it');
     assert_contains('$totalLifetimeIncome += $monthlyPrice', income_source('includes/stats_extra_calculations.php'), 'all-time income is estimated');

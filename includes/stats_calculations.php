@@ -434,6 +434,12 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     ];
 }
 
+// The history is stored per account, so it cannot follow a filter. user_id is
+// always one of the conditions; any other means a filter is active.
+if (count($conditions) > 1) {
+    $totalMonthlyCostDataPoints = [];
+}
+
 $showTotalMonthlyCostGraph = count($totalMonthlyCostDataPoints) > 1;
 
 ?>
