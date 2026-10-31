@@ -201,7 +201,7 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
     || ($showMonthlyStats && $showVsMonthlyBudgetGraph) || ($showPeriodStats && $showVsPeriodBudgetGraph)
     || $showProjectionGraph || $showLifetimeGraph || $showCycleGraph || $showCurrencyGraph || $showHistogramGraph || $showYearlyNewGraph;
 
-  $showTrendsSection = $showTotalMonthlyCostGraph || $showProjectionGraph || $monthOverMonthDelta !== null;
+  $showTrendsSection = $showTotalMonthlyCostGraph || $showProjectionGraph || $showProjectedBalanceGraph || $monthOverMonthDelta !== null;
   $showBudgetSection = ($showMonthlyStats && (isset($monthlyBudgetUsed) || isset($monthlyBudgetLeft) || isset($monthlyOverBudgetAmount) || $showVsMonthlyBudgetGraph))
     || ($showPeriodStats && (isset($periodBudgetUsed) || isset($periodBudgetLeft) || isset($periodOverBudgetAmount) || $showVsPeriodBudgetGraph));
   $showSplitSection = $showMemberCostGraph || $showCategoryCostGraph || $showPaymentMethodsGraph || $showCycleGraph || $showCurrencyGraph || $showHistogramGraph;
@@ -303,7 +303,7 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
     ?>
     <section class="stats-section">
       <h2><?= translate('income_and_balance', $i18n) ?></h2>
-      <div class="statistics">
+      <div class="statistics two-columns">
         <div class="statistic">
           <span><?= CurrencyFormatter::format($totalIncomePerMonth, $code) ?></span>
           <div class="title"><?= translate('monthly_income', $i18n) ?></div>
@@ -313,11 +313,11 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
           <div class="title"><?= translate('yearly_income', $i18n) ?></div>
         </div>
         <div class="statistic">
-          <span><?= CurrencyFormatter::format($balancePerMonth, $code) ?></span>
+          <span class="<?= $balancePerMonth < 0 ? 'negative' : 'income' ?>"><?= CurrencyFormatter::format($balancePerMonth, $code) ?></span>
           <div class="title"><?= translate('monthly_balance', $i18n) ?></div>
         </div>
         <div class="statistic">
-          <span><?= CurrencyFormatter::format($balancePerYear, $code) ?></span>
+          <span class="<?= $balancePerYear < 0 ? 'negative' : 'income' ?>"><?= CurrencyFormatter::format($balancePerYear, $code) ?></span>
           <div class="title"><?= translate('yearly_balance', $i18n) ?></div>
         </div>
       </div>
@@ -373,7 +373,7 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
         </div>
         <?php
       }
-      if ($showTotalMonthlyCostGraph || $showProjectionGraph) {
+      if ($showTotalMonthlyCostGraph || $showProjectionGraph || $showProjectedBalanceGraph) {
         ?>
         <div class="graphs">
           <?php
@@ -395,6 +395,16 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
                 <?= translate('projected_cost', $i18n) ?>
               </header>
               <div id="projectionChart" style="width: 100%;"></div>
+            </section>
+            <?php
+          }
+          if ($showProjectedBalanceGraph) {
+            ?>
+            <section class="graph x2">
+              <header>
+                <?= translate('projected_balance', $i18n) ?>
+              </header>
+              <div id="projectedBalanceChart" style="width: 100%;"></div>
             </section>
             <?php
           }
@@ -725,6 +735,7 @@ if ($showAnyGraph) {
     window.onload = function () {
       loadLineGraph("totalMonthlyCostChart", <?php echo json_encode($totalMonthlyCostDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showTotalMonthlyCostGraph ? 1 : 0 ?>);
       loadBarGraph("projectionChart", <?php echo json_encode($projectionDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showProjectionGraph ? 1 : 0 ?>, <?= isset($budget) && $budget > 0 ? $budget : 'null' ?>);
+      loadBarGraph("projectedBalanceChart", <?php echo json_encode($projectedBalanceDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showProjectedBalanceGraph ? 1 : 0 ?>, null);
       loadGraph("categorySplitChart", <?php echo json_encode($categoryDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showCategoryCostGraph ? 1 : 0 ?>);
       loadGraph("memberSplitChart", <?php echo json_encode($memberDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showMemberCostGraph ? 1 : 0 ?>);
       loadGraph("paymentMethidSplitChart", <?php echo json_encode($paymentMethodDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showPaymentMethodsGraph ? 1 : 0 ?>);

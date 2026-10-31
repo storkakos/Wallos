@@ -28,10 +28,32 @@ for ($i = 0; $i < 12; $i++) {
     $projectionBuckets[$bucketDate->format('Y-m')] = [
         'label' => $monthLabelFormatter->format($bucketDate),
         'total' => 0,
+        'income' => 0,
     ];
 }
 
 $cycleStepUnits = [1 => 'days', 2 => 'weeks', 3 => 'months', 4 => 'years'];
+
+// Projection: walk renewals forward into the buckets
+$addToProjection = function ($subscription, $cycle, $frequency, $amount, $field) use (&$projectionBuckets, $projectionStart, $projectionEnd, $cycleStepUnits) {
+    $paymentTimestamp = strtotime($subscription['next_payment'] ?? '');
+    if ($paymentTimestamp === false || !isset($cycleStepUnits[$cycle])) {
+        return;
+    }
+
+    $paymentDate = (new DateTime())->setTimestamp($paymentTimestamp);
+    $safety = 0;
+    while ($paymentDate < $projectionEnd && $safety < 1000) {
+        if ($paymentDate >= $projectionStart) {
+            $bucketKey = $paymentDate->format('Y-m');
+            if (isset($projectionBuckets[$bucketKey])) {
+                $projectionBuckets[$bucketKey][$field] += $amount;
+            }
+        }
+        $paymentDate->modify("+{$frequency} {$cycleStepUnits[$cycle]}");
+        $safety++;
+    }
+};
 
 $activeMonthlyPrices = [];
 $cheapestSubscription = null;
@@ -48,15 +70,18 @@ $now = new DateTime('today');
 
 if (isset($subscriptions)) {
     foreach ($subscriptions as $subscription) {
-        // Everything below describes spending, so income stays out of it
-        if ($subscription['type'] === 'income') {
-            continue;
-        }
-
         $cycle = (int) $subscription['cycle'];
         $frequency = max(1, (int) $subscription['frequency']);
         $convertedPrice = getPriceConverted($subscription['price'], $subscription['currency_id'], $db, $userId);
         $monthlyPrice = getPricePerMonth($cycle, $frequency, $convertedPrice);
+
+        // Everything below describes spending, so income only feeds the projected balance
+        if ($subscription['type'] === 'income') {
+            if (!$subscription['inactive'] && $cycle !== 5) {
+                $addToProjection($subscription, $cycle, $frequency, $convertedPrice, 'income');
+            }
+            continue;
+        }
 
         // New subscriptions per year (all subscriptions, active or not)
         $startDate = null;
@@ -98,22 +123,7 @@ if (isset($subscriptions)) {
                 $manualRenewalsCount++;
             }
 
-            // Projection: walk renewals forward into the buckets
-            $paymentTimestamp = strtotime($subscription['next_payment'] ?? '');
-            if ($paymentTimestamp !== false && isset($cycleStepUnits[$cycle])) {
-                $paymentDate = (new DateTime())->setTimestamp($paymentTimestamp);
-                $safety = 0;
-                while ($paymentDate < $projectionEnd && $safety < 1000) {
-                    if ($paymentDate >= $projectionStart) {
-                        $bucketKey = $paymentDate->format('Y-m');
-                        if (isset($projectionBuckets[$bucketKey])) {
-                            $projectionBuckets[$bucketKey]['total'] += $convertedPrice;
-                        }
-                    }
-                    $paymentDate->modify("+{$frequency} {$cycleStepUnits[$cycle]}");
-                    $safety++;
-                }
-            }
+            $addToProjection($subscription, $cycle, $frequency, $convertedPrice, 'total');
 
             // Lifetime spend and age (recurring subscriptions with a start date)
             if ($startDate !== null && $startDate <= $now) {
@@ -161,16 +171,19 @@ if (isset($totalMonthlyCostDataPoints) && count($totalMonthlyCostDataPoints) >= 
 
 // Projection-derived tiles
 $projectionDataPoints = [];
+$projectedBalanceDataPoints = [];
 $heaviestMonth = null;
 $monthsOverBudget = null;
 foreach ($projectionBuckets as $bucket) {
     $bucketTotal = round($bucket['total'], 2);
     $projectionDataPoints[] = ['label' => $bucket['label'], 'y' => $bucketTotal];
+    $projectedBalanceDataPoints[] = ['label' => $bucket['label'], 'y' => round($bucket['income'] - $bucket['total'], 2)];
     if ($heaviestMonth === null || $bucketTotal > $heaviestMonth['total']) {
         $heaviestMonth = ['label' => $bucket['label'], 'total' => $bucketTotal];
     }
 }
 $showProjectionGraph = $activeSubscriptions > 0 && $heaviestMonth !== null && $heaviestMonth['total'] > 0;
+$showProjectedBalanceGraph = $totalIncomePerMonth > 0;
 if (isset($budget) && $budget > 0 && $showProjectionGraph) {
     $monthsOverBudget = count(array_filter($projectionDataPoints, fn($point) => $point['y'] > $budget));
 }

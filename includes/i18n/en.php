@@ -556,6 +556,7 @@ $i18n = [
     "yearly_income" => "Yearly Income",
     "monthly_balance" => "Monthly Balance",
     "yearly_balance" => "Yearly Balance",
+    "projected_balance" => "Projected Balance (Next 12 Months)",
 ];
 
 

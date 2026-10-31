@@ -188,6 +188,18 @@ wallos_test('upcoming payments carry the type of each row', function () {
     $db->close();
 });
 
+wallos_test('the statistics project the balance and colour it', function () {
+    $extra = income_source('includes/stats_extra_calculations.php');
+    assert_contains("\$addToProjection(\$subscription, \$cycle, \$frequency, \$convertedPrice, 'income');", $extra, 'income feeds the projection');
+    assert_contains("\$addToProjection(\$subscription, \$cycle, \$frequency, \$convertedPrice, 'total');", $extra, 'costs still do');
+    assert_contains("round(\$bucket['income'] - \$bucket['total'], 2)", $extra, 'the balance is income minus cost');
+
+    $stats = income_source('stats.php');
+    assert_contains('loadBarGraph("projectedBalanceChart"', $stats, 'the chart is drawn');
+    assert_contains("\$balancePerMonth < 0 ? 'negative' : 'income'", $stats, 'a negative balance is marked');
+    assert_contains('statistics two-columns', $stats, 'the tiles stay together');
+});
+
 wallos_test('the income strings exist in the source language', function () {
     $i18n = [];
     include WALLOS_ROOT . '/includes/i18n/en.php';

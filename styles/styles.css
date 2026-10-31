@@ -2705,6 +2705,18 @@ button.dark-theme-button i {
   overflow: hidden;
 }
 
+.statistics.two-columns .statistic {
+  flex-basis: calc(50% - 10px);
+}
+
+.statistic span.income {
+  color: var(--success-color);
+}
+
+.statistic span.negative {
+  color: var(--error-color);
+}
+
 .statistic.short {
   padding-bottom: 15px;
 }
