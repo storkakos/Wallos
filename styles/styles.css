@@ -3297,6 +3297,11 @@ button.dark-theme-button i {
   background-color: rgba(var(--main-color-rgb), 0.18);
 }
 
+.calendar .calendar-event.income {
+  background-color: rgba(var(--success-color-rgb), 0.14);
+  color: var(--success-color);
+}
+
 .calendar .calendar-event-title {
   display: flex;
   align-items: center;
@@ -3931,6 +3936,15 @@ input[type="radio"]:checked+label::after {
 
 .dashboard-subscriptions-list>.subscription-item.thin .subscription-item-value {
   font-size: 20px;;
+}
+
+.dashboard-subscriptions-list>.subscription-item .subscription-item-price.income,
+.dashboard-subscriptions-list>.subscription-item .subscription-item-value.income {
+  color: var(--success-color);
+}
+
+.dashboard-subscriptions-list>.subscription-item .subscription-item-value.negative {
+  color: var(--error-color);
 }
 
 .ai-recommendations-container {
