@@ -104,11 +104,12 @@ $mostExpensiveSubscription = array();
 $mostExpensiveSubscription['price'] = 0;
 $amountDueThisMonth = 0;
 $totalCostPerMonth = 0;
+$totalIncomePerMonth = 0;
 $totalSavingsPerMonth = 0;
 $totalCostsInReplacementsPerMonth = 0;
 
 $statsSubtitleParts = [];
-$query = "SELECT id, name, price, logo, logo_text_color, logo_variant, frequency, cycle, currency_id, next_payment, payer_user_id, category_id, payment_method_id, inactive, replacement_subscription_id, start_date, auto_renew FROM subscriptions";
+$query = "SELECT id, name, price, logo, logo_text_color, logo_variant, frequency, cycle, currency_id, next_payment, payer_user_id, category_id, payment_method_id, inactive, replacement_subscription_id, start_date, auto_renew, type FROM subscriptions";
 $conditions = [];
 $params = [];
 
@@ -223,6 +224,15 @@ if ($result) {
             $originalSubscriptionPrice *= $memberShare;
             $price = $fullPrice * $memberShare;
 
+            // Income only feeds the balance: costs, budget, savings and the
+            // subscription counters below are expense-only.
+            if ($subscription['type'] === 'income') {
+                if ($inactive == 0 && $cycle != 5) {
+                    $totalIncomePerMonth += $price;
+                }
+                continue;
+            }
+
             if ($inactive == 0) {
                 if ($cycle != 5) {
                     $activeSubscriptions++;
@@ -281,7 +291,7 @@ if ($result) {
 
                 // Check if it has a replacement subscription and if it was not already counted
                 if ($replacementSubscriptionId && !in_array($replacementSubscriptionId, $replacementSubscriptions)) {
-                    $query = "SELECT price, currency_id, cycle, frequency FROM subscriptions WHERE id = :replacementSubscriptionId AND user_id = :userId";
+                    $query = "SELECT price, currency_id, cycle, frequency FROM subscriptions WHERE id = :replacementSubscriptionId AND user_id = :userId AND type = 'expense'";
                     $stmt = $db->prepare($query);
                     $stmt->bindValue(':replacementSubscriptionId', $replacementSubscriptionId, SQLITE3_INTEGER);
                     $stmt->bindValue(':userId', $userId, SQLITE3_INTEGER);
@@ -317,6 +327,10 @@ if ($result) {
         $averageSubscriptionCost = 0;
     }
 }
+
+$totalIncomePerYear = $totalIncomePerMonth * 12;
+$balancePerMonth = $totalIncomePerMonth - $totalCostPerMonth;
+$balancePerYear = $balancePerMonth * 12;
 
 $today = new DateTime('now');
 $budgetPeriodType = sanitizeBudgetPeriodType($userData['budget_period_type'] ?? 'monthly');

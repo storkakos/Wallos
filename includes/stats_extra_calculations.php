@@ -48,6 +48,11 @@ $now = new DateTime('today');
 
 if (isset($subscriptions)) {
     foreach ($subscriptions as $subscription) {
+        // Everything below describes spending, so income stays out of it
+        if ($subscription['type'] === 'income') {
+            continue;
+        }
+
         $cycle = (int) $subscription['cycle'];
         $frequency = max(1, (int) $subscription['frequency']);
         $convertedPrice = getPriceConverted($subscription['price'], $subscription['currency_id'], $db, $userId);

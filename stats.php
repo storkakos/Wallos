@@ -299,6 +299,34 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
   </section>
 
   <?php
+  if ($totalIncomePerMonth > 0) {
+    ?>
+    <section class="stats-section">
+      <h2><?= translate('income_and_balance', $i18n) ?></h2>
+      <div class="statistics">
+        <div class="statistic">
+          <span><?= CurrencyFormatter::format($totalIncomePerMonth, $code) ?></span>
+          <div class="title"><?= translate('monthly_income', $i18n) ?></div>
+        </div>
+        <div class="statistic">
+          <span><?= CurrencyFormatter::format($totalIncomePerYear, $code) ?></span>
+          <div class="title"><?= translate('yearly_income', $i18n) ?></div>
+        </div>
+        <div class="statistic">
+          <span><?= CurrencyFormatter::format($balancePerMonth, $code) ?></span>
+          <div class="title"><?= translate('monthly_balance', $i18n) ?></div>
+        </div>
+        <div class="statistic">
+          <span><?= CurrencyFormatter::format($balancePerYear, $code) ?></span>
+          <div class="title"><?= translate('yearly_balance', $i18n) ?></div>
+        </div>
+      </div>
+    </section>
+    <?php
+  }
+  ?>
+
+  <?php
   if ($showTrendsSection) {
     ?>
     <section class="stats-section">
