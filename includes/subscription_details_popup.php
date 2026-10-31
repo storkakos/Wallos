@@ -101,6 +101,7 @@ $detailsLookups = [
     'manual_renewal' => translate('manual_renewal', $i18n),
     'inactive' => translate('disabled', $i18n),
     'one_time' => translate('One-time', $i18n),
+    'income' => translate('income', $i18n),
     'enabled' => translate('enabled', $i18n),
     'disabled' => translate('disabled', $i18n),
     'on_due_date' => translate('on_due_date', $i18n),

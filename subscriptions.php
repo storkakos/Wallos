@@ -24,7 +24,7 @@ if (isset($_COOKIE['sortOrder']) && $_COOKIE['sortOrder'] != "") {
 }
 
 $sortOrder = $sort;
-$allowedSortCriteria = ['name', 'id', 'next_payment', 'price', 'payer_user_id', 'category_id', 'payment_method_id', 'inactive', 'alphanumeric', 'renewal_type'];
+$allowedSortCriteria = ['name', 'id', 'next_payment', 'price', 'payer_user_id', 'category_id', 'payment_method_id', 'inactive', 'alphanumeric', 'renewal_type', 'type'];
 $order = ($sort == "price" || $sort == "id") ? "DESC" : "ASC";
 
 if ($sort == "alphanumeric") {
@@ -222,6 +222,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
       <option value="set_notify_days"><?= translate('set_notification_timing', $i18n) ?></option>
       <option value="set_category"><?= translate('set_category', $i18n) ?></option>
       <option value="set_payment_method"><?= translate('set_payment_method', $i18n) ?></option>
+      <option value="set_type"><?= translate('set_type', $i18n) ?></option>
       <option value="delete"><?= translate('delete', $i18n) ?></option>
     </select>
     <select id="bulk-notify-days" hidden>
@@ -253,6 +254,10 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
         <?php
       }
       ?>
+    </select>
+    <select id="bulk-type" hidden>
+      <option value="expense"><?= translate('expense', $i18n) ?></option>
+      <option value="income"><?= translate('income', $i18n) ?></option>
     </select>
     <button class="button mobile-grow" id="bulk-apply" onClick="applyBulkAction()" disabled><?= translate('apply', $i18n) ?></button>
     <button class="button secondary-button mobile-grow" onClick="toggleBulkMode()"><?= translate('cancel', $i18n) ?></button>

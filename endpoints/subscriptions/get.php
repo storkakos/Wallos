@@ -70,6 +70,11 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
     $params[':inactive'] = $_GET['state'];
   }
 
+  if (isset($_GET['type']) && in_array($_GET['type'], ['income', 'expense'], true)) {
+    $sql .= " AND type = :type";
+    $params[':type'] = $_GET['type'];
+  }
+
   if (isset($_GET['renewalType']) && $_GET['renewalType'] != "") {
     if ($_GET['renewalType'] === 'onetime') {
       $sql .= " AND cycle = 5";
@@ -103,7 +108,7 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
   }
 
   $sortOrder = $sort;
-  $allowedSortCriteria = ['name', 'id', 'next_payment', 'price', 'payer_user_id', 'category_id', 'payment_method_id', 'inactive', 'alphanumeric', 'renewal_type'];
+  $allowedSortCriteria = ['name', 'id', 'next_payment', 'price', 'payer_user_id', 'category_id', 'payment_method_id', 'inactive', 'alphanumeric', 'renewal_type', 'type'];
   $order = ($sort == "price" || $sort == "id") ? "DESC" : "ASC";
 
   if ($sort == "alphanumeric") {

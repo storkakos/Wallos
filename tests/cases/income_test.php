@@ -210,6 +210,27 @@ wallos_test('the form rewords itself for income', function () {
     assert_contains("typeSelect.value = subscription.type;\n  applyEntryTypeLabels();", $script, 'the edit form rewords itself after loading the type');
 });
 
+wallos_test('the list can be filtered and sorted by type', function () {
+    $endpoint = income_source('endpoints/subscriptions/get.php');
+    assert_contains("in_array(\$_GET['type'], ['income', 'expense'], true)", $endpoint, 'the filter value is whitelisted');
+    assert_contains('data-entrytype="income"', income_source('includes/filters_menu.php'), 'the filter is offered');
+    assert_contains("'renewal_type', 'type'];", $endpoint, 'the refreshed list can sort by type');
+    assert_contains("'renewal_type', 'type'];", income_source('subscriptions.php'), 'the first page load too');
+});
+
+wallos_test('a bulk action sets the type and only accepts income or expense', function () {
+    $bulk = income_source('endpoints/subscriptions/bulkedit.php');
+    assert_contains("'set_type' => \"type = :type\"", $bulk, 'the action exists');
+    assert_contains("\$type = (\$data['value'] ?? '') === 'income' ? 'income' : 'expense';", $bulk, 'the value is whitelisted');
+    assert_contains('value = document.querySelector("#bulk-type").value;', income_source('scripts/subscriptions.js'), 'the script sends the text value');
+});
+
+wallos_test('the details popup marks income', function () {
+    $script = income_source('scripts/subscription-details.js');
+    assert_contains("detailsAddChip(chips, strings.income, 'ok');", $script, 'income chip');
+    assert_contains("(isIncome ? '+' : '')", $script, 'plus sign');
+});
+
 wallos_test('the income strings exist in the source language', function () {
     $i18n = [];
     include WALLOS_ROOT . '/includes/i18n/en.php';

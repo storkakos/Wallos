@@ -4591,6 +4591,10 @@ body.details-open {
   font-weight: 700;
 }
 
+.details-price.income {
+  color: var(--success-color);
+}
+
 .details-cycle {
   font-size: 14px;
   color: var(--text-muted);

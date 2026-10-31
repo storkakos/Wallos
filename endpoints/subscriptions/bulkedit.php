@@ -18,6 +18,7 @@ function bulkEditFail($i18n)
 $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($data['ids'] ?? [])))));
 $action = $data['action'] ?? '';
 $value = isset($data['value']) ? (int) $data['value'] : null;
+$type = ($data['value'] ?? '') === 'income' ? 'income' : 'expense';
 
 if (empty($ids)) {
     bulkEditFail($i18n);
@@ -39,6 +40,7 @@ $updates = [
     'set_notify_days' => "notify = 1, notify_days_before = :value",
     'set_category' => "category_id = :value",
     'set_payment_method' => "payment_method_id = :value",
+    'set_type' => "type = :type",
 ];
 
 if ($action === 'set_notify_days' && ($value === null || $value < -1 || $value > 180)) {
@@ -61,6 +63,9 @@ if (isset($updates[$action])) {
     $stmt = $db->prepare("UPDATE subscriptions SET " . $updates[$action] . " WHERE id IN ($idList) AND user_id = :userId");
     if (strpos($updates[$action], ':value') !== false) {
         $stmt->bindValue(':value', $value, SQLITE3_INTEGER);
+    }
+    if ($action === 'set_type') {
+        $stmt->bindValue(':type', $type, SQLITE3_TEXT);
     }
     $stmt->bindValue(':userId', $userId, SQLITE3_INTEGER);
     if (!$stmt->execute()) {

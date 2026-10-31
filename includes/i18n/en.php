@@ -556,6 +556,7 @@ $i18n = [
     "yearly_income" => "Yearly Income",
     "monthly_balance" => "Monthly Balance",
     "yearly_balance" => "Yearly Balance",
+    "set_type" => "Set type",
     "add_income" => "Add income",
     "edit_income" => "Edit income",
     "income_name" => "Income name",
