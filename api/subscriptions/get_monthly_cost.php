@@ -9,7 +9,9 @@ It receives the following parameters:
 It returns a JSON object with the following properties:
 - success: whether the request was successful (boolean).
 - title: a string with "${month} ${year}" (e.g., "March 2025").
-- monthly_cost: a float with the total cost for the given month.
+- monthly_cost: a float with the total cost for the given month. Income is not part of it.
+- monthly_income: a float with the recurring income for the given month.
+- monthly_balance: a float with monthly_income minus monthly_cost.
 - localized_monthly_cost: a string with the total cost formatted according to the user's locale and currency.
 - currency_code: a string with the currency code of the user's main currency.
 - currency_symbol: a string with the currency symbol of the user's main currency.
@@ -20,6 +22,8 @@ Example response:
   "success": true,
   "title": "March 2025",
   "monthly_cost": "120.24",
+  "monthly_income": "2000.00",
+  "monthly_balance": "1879.76",
   "localized_monthly_cost": "€120.24",
   "currency_code": "EUR",
   "currency_symbol": "€",
@@ -83,10 +87,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" || $_SERVER["REQUEST_METHOD"] === "GET
 
     $title = date('F Y', strtotime($year . '-' . $month . '-01'));
     $monthlyCost = 0;
+    $monthlyIncome = 0;
     $notes = [];
     $currencies = [];
 
-    $sql = "SELECT * FROM subscriptions WHERE user_id = :userId AND inactive = 0 AND type = 'expense'";
+    $sql = "SELECT * FROM subscriptions WHERE user_id = :userId AND inactive = 0 AND NOT (type = 'income' AND cycle = 5)";
     $stmt = $db->prepare($sql);
     $stmt->bindValue(':userId', $userId);
     $result = $stmt->execute();
@@ -157,7 +162,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" || $_SERVER["REQUEST_METHOD"] === "GET
                 ) {
                     $price *= $currencies[$userCurrencyId] / $currencies[$subscription['currency_id']];
                 }
-                $monthlyCost += $price;
+                if ($subscription['type'] === 'income') {
+                    $monthlyIncome += $price;
+                } else {
+                    $monthlyCost += $price;
+                }
             }
         }
     }
@@ -169,6 +178,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" || $_SERVER["REQUEST_METHOD"] === "GET
         'success' => true,
         'title' => $title,
         'monthly_cost' => number_format($monthlyCost, 2),
+        'monthly_income' => number_format($monthlyIncome, 2),
+        'monthly_balance' => number_format($monthlyIncome - $monthlyCost, 2),
         'localized_monthly_cost' => $localizedMonthlyCost,
         'currency_code' => $currency_code,
         'currency_symbol' => $currency_symbol,

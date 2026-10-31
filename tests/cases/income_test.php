@@ -145,7 +145,6 @@ wallos_test('the statistics keep income out of costs and work out the balance', 
 
 wallos_test('every other cost output excludes income', function () {
     foreach ([
-        'api/subscriptions/get_monthly_cost.php',
         'api/subscriptions/get_period_budget.php',
         'endpoints/cronjobs/storetotalyearlycost.php',
         'endpoints/cronjobs/sendnotifications.php',
@@ -331,6 +330,13 @@ wallos_test('every income string is translated into German', function () {
     foreach ($keys[1] as $key) {
         assert_true(isset($i18n[$key]), "de.php has $key");
     }
+});
+
+wallos_test('the monthly API keeps cost and income apart', function () {
+    $api = income_source('api/subscriptions/get_monthly_cost.php');
+    assert_contains("if (\$subscription['type'] === 'income') {", $api, 'income is summed on its own');
+    assert_contains("'monthly_balance' => number_format(\$monthlyIncome - \$monthlyCost, 2)", $api, 'the balance is income minus cost');
+    assert_contains("NOT (type = 'income' AND cycle = 5)", $api, 'one-time income stays out, as in the statistics');
 });
 
 wallos_test('the income strings exist in the source language', function () {
