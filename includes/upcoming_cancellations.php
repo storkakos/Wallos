@@ -49,7 +49,7 @@ function get_upcoming_cancellations_monthly_value($cancellations, $db, $userId)
     $total = 0;
 
     foreach ($cancellations as $subscription) {
-        if ($subscription['type'] === 'income') {
+        if (($subscription['type'] ?? 'expense') === 'income') {
             continue;
         }
 
