@@ -315,6 +315,23 @@ wallos_test('the statistics filter by type, count income and estimate all-time i
     assert_contains('$totalLifetimeIncome += $monthlyPrice', income_source('includes/stats_extra_calculations.php'), 'all-time income is estimated');
 });
 
+wallos_test('every income string is translated into German', function () {
+    $i18n = [];
+    include WALLOS_ROOT . '/includes/i18n/en.php';
+    $english = $i18n;
+    $i18n = [];
+    include WALLOS_ROOT . '/includes/i18n/de.php';
+
+    $source = str_replace("\r\n", "\n", file_get_contents(WALLOS_ROOT . '/includes/i18n/en.php'));
+    preg_match('/\/\/ Income and expenses\n(.*?)\n\];/s', $source, $block);
+    preg_match_all('/"([a-z_]+)" =>/', $block[1], $keys);
+
+    assert_true(count($keys[1]) > 30, 'the income block was found');
+    foreach ($keys[1] as $key) {
+        assert_true(isset($i18n[$key]), "de.php has $key");
+    }
+});
+
 wallos_test('the income strings exist in the source language', function () {
     $i18n = [];
     include WALLOS_ROOT . '/includes/i18n/en.php';
