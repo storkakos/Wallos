@@ -3961,8 +3961,14 @@ input[type="radio"]:checked+label::after {
 }
 
 .income-subscriptions .dashboard-subscriptions-list {
-  flex-wrap: wrap;
-  overflow-x: visible;
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+}
+
+@media (max-width: 768px) {
+  .income-subscriptions .dashboard-subscriptions-list {
+    grid-template-columns: repeat(2, max-content);
+  }
 }
 
 .dashboard-subscriptions-list>.subscription-item .subscription-item-price.income,
