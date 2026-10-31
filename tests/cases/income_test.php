@@ -231,6 +231,16 @@ wallos_test('the details popup marks income', function () {
     assert_contains("(isIncome ? '+' : '')", $script, 'plus sign');
 });
 
+wallos_test('notifications and calendar exports label income', function () {
+    assert_contains("(\$isIncome ? 'Income: ' : '')", income_source('endpoints/cronjobs/sendnotifications.php'), 'payment reminders');
+    assert_contains("(\$isIncome ? '+' : '') . formatPrice(", income_source('endpoints/cronjobs/sendnotifications.php'), 'payment reminder amounts');
+    assert_contains("(\$rowSubscription['type'] === 'income' ? 'Income: ' : '')", income_source('endpoints/cronjobs/sendcancellationnotifications.php'), 'cancellation reminders');
+
+    foreach (['api/subscriptions/get_ical_feed.php', 'endpoints/subscription/exportcalendar.php'] as $path) {
+        assert_contains("(\$subscription['type'] === 'income' ? 'Income: ' : '')", income_source($path), $path);
+    }
+});
+
 wallos_test('the income strings exist in the source language', function () {
     $i18n = [];
     include WALLOS_ROOT . '/includes/i18n/en.php';
