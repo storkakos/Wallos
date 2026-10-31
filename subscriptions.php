@@ -306,6 +306,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
       $print[$id]['url'] = $subscription['url'];
       $print[$id]['notes'] = $subscription['notes'];
       $print[$id]['replacement_subscription_id'] = $subscription['replacement_subscription_id'];
+      $print[$id]['type'] = $subscription['type'];
 
       if (isset($settings['convertCurrency']) && $settings['convertCurrency'] === 'true' && $currencyId != $mainCurrencyId) {
         $print[$id]['price'] = getPriceConverted($print[$id]['price'], $currencyId, $db);
@@ -371,6 +372,14 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
     <span class="fa-solid fa-xmark close-form" onClick="closeAddSubscription()"></span>
   </header>
   <form action="endpoints/subscription/add.php" method="post" id="subs-form">
+
+    <div class="form-group">
+      <label for="type"><?= translate('entry_type', $i18n) ?></label>
+      <select id="type" name="type">
+        <option value="expense"><?= translate('expense', $i18n) ?></option>
+        <option value="income"><?= translate('income', $i18n) ?></option>
+      </select>
+    </div>
 
     <div class="form-group-inline">
       <input type="text" id="name" name="name" autocomplete="off"
