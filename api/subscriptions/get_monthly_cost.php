@@ -86,7 +86,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" || $_SERVER["REQUEST_METHOD"] === "GET
     $notes = [];
     $currencies = [];
 
-    $sql = "SELECT * FROM subscriptions WHERE user_id = :userId AND inactive = 0";
+    $sql = "SELECT * FROM subscriptions WHERE user_id = :userId AND inactive = 0 AND type = 'expense'";
     $stmt = $db->prepare($sql);
     $stmt->bindValue(':userId', $userId);
     $result = $stmt->execute();

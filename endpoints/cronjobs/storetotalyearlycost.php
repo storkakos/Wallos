@@ -47,7 +47,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $userCurrencyId = $row['main_currency'];
     $totalYearlyCost = 0;
 
-    $query = "SELECT * FROM subscriptions WHERE user_id = :userId AND inactive = 0";
+    $query = "SELECT * FROM subscriptions WHERE user_id = :userId AND inactive = 0 AND type = 'expense'";
     $stmt = $db->prepare($query);
     $stmt->bindParam(':userId', $userId, SQLITE3_INTEGER);
     $resultSubscriptions = $stmt->execute();
