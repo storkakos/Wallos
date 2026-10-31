@@ -110,32 +110,33 @@ function wallos_test_database()
     if ($template === null) {
         $sandbox = WALLOS_TEST_TMP . '/sandbox';
 
-        if (!is_dir($sandbox)) {
-            mkdir($sandbox, 0700, true);
-            foreach (['endpoints/cronjobs', 'includes', 'migrations', 'db'] as $directory) {
+        foreach (['endpoints/cronjobs', 'includes', 'migrations', 'db'] as $directory) {
+            if (!is_dir($sandbox . '/' . $directory)) {
                 mkdir($sandbox . '/' . $directory, 0700, true);
             }
-
-            foreach (glob(WALLOS_ROOT . '/migrations/*.php') as $migration) {
-                copy($migration, $sandbox . '/migrations/' . basename($migration));
-            }
-            copy(WALLOS_ROOT . '/endpoints/cronjobs/createdatabase.php', $sandbox . '/endpoints/cronjobs/createdatabase.php');
-            copy(WALLOS_ROOT . '/includes/run_migrations.php', $sandbox . '/includes/run_migrations.php');
         }
+
+        // A sandbox left by an earlier run must not hide a newer migration.
+        foreach (glob(WALLOS_ROOT . '/migrations/*.php') as $migration) {
+            copy($migration, $sandbox . '/migrations/' . basename($migration));
+        }
+        copy(WALLOS_ROOT . '/endpoints/cronjobs/createdatabase.php', $sandbox . '/endpoints/cronjobs/createdatabase.php');
+        copy(WALLOS_ROOT . '/includes/run_migrations.php', $sandbox . '/includes/run_migrations.php');
 
         $databaseFile = $sandbox . '/db/wallos.db';
-
-        if (!file_exists($databaseFile)) {
-            // Both scripts print progress and resolve their paths from __DIR__,
-            // which is why they run inside the sandbox copy.
-            ob_start();
-            require $sandbox . '/endpoints/cronjobs/createdatabase.php';
-            $db = new SQLite3($databaseFile);
-            $db->busyTimeout(5000);
-            require $sandbox . '/includes/run_migrations.php';
-            $db->close();
-            ob_end_clean();
+        if (file_exists($databaseFile)) {
+            unlink($databaseFile);
         }
+
+        // Both scripts print progress and resolve their paths from __DIR__,
+        // which is why they run inside the sandbox copy.
+        ob_start();
+        require $sandbox . '/endpoints/cronjobs/createdatabase.php';
+        $db = new SQLite3($databaseFile);
+        $db->busyTimeout(5000);
+        require $sandbox . '/includes/run_migrations.php';
+        $db->close();
+        ob_end_clean();
 
         $template = $databaseFile;
     }
