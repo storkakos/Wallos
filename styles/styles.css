@@ -3960,6 +3960,11 @@ input[type="radio"]:checked+label::after {
   font-size: 20px;;
 }
 
+.income-subscriptions .dashboard-subscriptions-list {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
 .dashboard-subscriptions-list>.subscription-item .subscription-item-price.income,
 .dashboard-subscriptions-list>.subscription-item .subscription-item-value.income {
   color: var(--success-color);
