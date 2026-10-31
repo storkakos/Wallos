@@ -156,6 +156,10 @@ function renderSubscriptionDetails(subscription) {
   const detailsPrice = document.querySelector('#details-price');
   detailsPrice.textContent = (isIncome ? '+' : '') + detailsFormatPrice(subscription.price, subscription.currency_id);
   detailsPrice.classList.toggle('income', isIncome);
+  document.querySelectorAll('#subscription-details [data-income-label]').forEach((element) => {
+    element.dataset.expenseLabel ??= element.textContent;
+    element.textContent = isIncome ? element.dataset.incomeLabel : element.dataset.expenseLabel;
+  });
   document.querySelector('#details-billing-cycle').textContent = isOneTime ? "" : detailsBillingCycleText(subscription.cycle, subscription.frequency);
 
   const progressTrack = document.querySelector('#details-progress-track');

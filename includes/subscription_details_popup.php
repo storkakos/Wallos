@@ -41,7 +41,7 @@ require_once __DIR__ . '/getdbkeys.php';
   </div>
   <dl class="details-grid">
     <div class="details-item">
-      <dt><?= translate('next_payment', $i18n) ?></dt>
+      <dt data-income-label="<?= translate('next_income_date', $i18n) ?>"><?= translate('next_payment', $i18n) ?></dt>
       <dd id="details-next-payment"></dd>
     </div>
     <div class="details-item">
@@ -53,11 +53,11 @@ require_once __DIR__ . '/getdbkeys.php';
       <dd id="details-category"></dd>
     </div>
     <div class="details-item">
-      <dt><?= translate('paid_by', $i18n) ?></dt>
+      <dt data-income-label="<?= translate('received_by', $i18n) ?>"><?= translate('paid_by', $i18n) ?></dt>
       <dd id="details-payer"></dd>
     </div>
     <div class="details-item">
-      <dt><?= translate('payment_method', $i18n) ?></dt>
+      <dt data-income-label="<?= translate('received_via', $i18n) ?>"><?= translate('payment_method', $i18n) ?></dt>
       <dd id="details-payment-method">
         <img id="details-payment-icon" src="" alt="">
         <span id="details-payment-name"></span>

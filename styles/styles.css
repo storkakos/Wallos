@@ -2728,7 +2728,8 @@ button.dark-theme-button i {
 }
 
 @media (max-width: 768px) {
-  .statistic {
+  .statistic,
+  .statistics.two-columns .statistic {
     flex-basis: 100%;
   }
 
