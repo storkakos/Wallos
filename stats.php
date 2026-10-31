@@ -237,14 +237,20 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
         <?php
       }
       ?>
-      <div class="statistic">
-        <span class="<?= $totalCostPerMonth > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($totalCostPerMonth, $code) ?></span>
-        <div class="title"><?= translate('monthly_cost', $i18n) ?></div>
-      </div>
-      <div class="statistic">
-        <span class="<?= $totalCostPerYear > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($totalCostPerYear, $code) ?></span>
-        <div class="title"><?= translate('yearly_cost', $i18n) ?></div>
-      </div>
+      <?php
+      if ($totalIncomePerMonth <= 0) {
+        ?>
+        <div class="statistic">
+          <span class="<?= $totalCostPerMonth > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($totalCostPerMonth, $code) ?></span>
+          <div class="title"><?= translate('monthly_cost', $i18n) ?></div>
+        </div>
+        <div class="statistic">
+          <span class="<?= $totalCostPerYear > 0 ? 'expense' : '' ?>"><?= CurrencyFormatter::format($totalCostPerYear, $code) ?></span>
+          <div class="title"><?= translate('yearly_cost', $i18n) ?></div>
+        </div>
+        <?php
+      }
+      ?>
       <?php
       if ($totalCostPerMonth > 0) {
         ?>
