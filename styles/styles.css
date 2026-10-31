@@ -853,8 +853,16 @@ body.light img.logo-theme-variant[data-native-theme="dark"] {
   overflow-wrap: break-word;
 }
 
+.subscription .price .value {
+  color: var(--error-color);
+}
+
 .subscription.income .price .value {
   color: var(--success-color);
+}
+
+.subscription.inactive .price .value {
+  color: inherit;
 }
 
 .subscription .price .original_price {
@@ -2705,15 +2713,12 @@ button.dark-theme-button i {
   overflow: hidden;
 }
 
-.statistics.two-columns .statistic {
-  flex-basis: calc(50% - 10px);
-}
-
 .statistic span.income {
   color: var(--success-color);
 }
 
-.statistic span.negative {
+.statistic span.negative,
+.statistic span.expense {
   color: var(--error-color);
 }
 
@@ -2728,8 +2733,7 @@ button.dark-theme-button i {
 }
 
 @media (max-width: 768px) {
-  .statistic,
-  .statistics.two-columns .statistic {
+  .statistic {
     flex-basis: 100%;
   }
 
@@ -3313,6 +3317,11 @@ button.dark-theme-button i {
 .calendar .calendar-event.income {
   background-color: rgba(var(--success-color-rgb), 0.14);
   color: var(--success-color);
+}
+
+.calendar .calendar-event.expense {
+  background-color: rgba(var(--error-color-rgb), 0.14);
+  color: var(--error-color);
 }
 
 .calendar .calendar-event-title {
@@ -3956,6 +3965,8 @@ input[type="radio"]:checked+label::after {
   color: var(--success-color);
 }
 
+.dashboard-subscriptions-list>.subscription-item .subscription-item-price.expense,
+.dashboard-subscriptions-list>.subscription-item .subscription-item-value.expense,
 .dashboard-subscriptions-list>.subscription-item .subscription-item-value.negative {
   color: var(--error-color);
 }
@@ -4594,6 +4605,10 @@ body.details-open {
 
 .details-price.income {
   color: var(--success-color);
+}
+
+.details-price.expense {
+  color: var(--error-color);
 }
 
 .details-cycle {

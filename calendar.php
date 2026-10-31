@@ -62,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['month']) && isset($_GET
 $currenciesInUse = [];
 $numberOfSubscriptionsToPayThisMonth = 0;
 $totalCostThisMonth = 0;
+$totalIncomeThisMonth = 0;
 $amountDueThisMonth = 0;
 
 $query = "SELECT * FROM subscriptions WHERE user_id = :user_id AND inactive = 0";
@@ -202,13 +203,14 @@ if ($weekStartsSunday) {
     $startOfMonth = strtotime($monthKey . '-01');
     $paymentsByDay = [];
 
-    $registerPayment = function ($date, $subscription) use (&$paymentsByDay, &$totalCostThisMonth, &$numberOfSubscriptionsToPayThisMonth, &$amountDueThisMonth, $today, $db, $userId) {
+    $registerPayment = function ($date, $subscription) use (&$paymentsByDay, &$totalCostThisMonth, &$totalIncomeThisMonth, &$numberOfSubscriptionsToPayThisMonth, &$amountDueThisMonth, $today, $db, $userId) {
       $paymentsByDay[(int) date('j', $date)][] = $subscription;
+      $convertedPrice = getPriceConverted($subscription['price'], $subscription['currency_id'], $db, $userId);
       // Income shows on its day but is not something to pay
       if ($subscription['type'] === 'income') {
+        $totalIncomeThisMonth += $convertedPrice;
         return;
       }
-      $convertedPrice = getPriceConverted($subscription['price'], $subscription['currency_id'], $db, $userId);
       $totalCostThisMonth += $convertedPrice;
       $numberOfSubscriptionsToPayThisMonth++;
       if ($date >= $today) {
@@ -294,7 +296,7 @@ if ($weekStartsSunday) {
                 <div class="calendar-cell-content">
                   <?php foreach ($paymentsByDay[$day] as $payment) { ?>
                     <?php $isIncome = $payment['type'] === 'income'; ?>
-                    <div class="calendar-event<?= $isIncome ? ' income' : '' ?>" onClick="showSubscriptionDetails(event, <?= $payment['id'] ?>)"
+                    <div class="calendar-event <?= $isIncome ? 'income' : 'expense' ?>" onClick="showSubscriptionDetails(event, <?= $payment['id'] ?>)"
                       title="<?= htmlspecialchars($payment['name']) ?>">
                       <span class="calendar-event-title">
                         <?php if ($payment['cycle'] != 5) { ?>
@@ -347,13 +349,24 @@ if ($weekStartsSunday) {
           <div class="title"><?= translate("active_subscriptions", $i18n) ?></div>
         </div>
         <div class="statistic">
-          <span><?= CurrencyFormatter::format($totalCostThisMonth, $code) ?></span>
+          <span class="expense"><?= CurrencyFormatter::format($totalCostThisMonth, $code) ?></span>
           <div class="title"><?= translate("total_cost", $i18n) ?></div>
         </div>
         <div class="statistic">
-          <span><?= CurrencyFormatter::format($amountDueThisMonth, $code) ?></span>
+          <span class="expense"><?= CurrencyFormatter::format($amountDueThisMonth, $code) ?></span>
           <div class="title"><?= translate("amount_due", $i18n) ?></div>
         </div>
+        <?php if ($totalIncomeThisMonth > 0) { ?>
+          <div class="statistic">
+            <span class="income"><?= CurrencyFormatter::format($totalIncomeThisMonth, $code) ?></span>
+            <div class="title"><?= translate("total_income", $i18n) ?></div>
+          </div>
+          <div class="statistic">
+            <?php $balanceThisMonth = $totalIncomeThisMonth - $totalCostThisMonth; ?>
+            <span class="<?= $balanceThisMonth < 0 ? 'negative' : 'income' ?>"><?= CurrencyFormatter::format($balanceThisMonth, $code) ?></span>
+            <div class="title"><?= translate("balance", $i18n) ?></div>
+          </div>
+        <?php } ?>
       </div>
     </div>
 
