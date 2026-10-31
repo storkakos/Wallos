@@ -191,6 +191,10 @@ wallos_test('upcoming payments carry the type of each row', function () {
 
     assert_same(['Rent'], array_column($payments, 'name'), 'upcoming payments are expenses only');
     assert_same(['Salary'], array_column($income, 'name'), 'upcoming income is its own list');
+
+    income_insert($db, 'Small side job', 50, 'income');
+    $income = get_upcoming_payments($db, 1, 3, 'income');
+    assert_same('Salary', $income[0]['name'], 'on the same day the larger amount comes first');
     $db->close();
 });
 

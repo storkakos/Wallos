@@ -48,7 +48,7 @@ function get_upcoming_payments($db, $userId, $limit, $type = 'expense')
           AND inactive = 0
           AND cycle != 5
           AND type = :type
-        ORDER BY next_payment ASC
+        ORDER BY next_payment ASC, price DESC
         LIMIT :limit");
     $stmt->bindValue(':userId', $userId, SQLITE3_INTEGER);
     $stmt->bindValue(':limit', $limit, SQLITE3_INTEGER);
