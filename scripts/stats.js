@@ -1,5 +1,17 @@
 const CHART_PALETTE = ['#008FFB','#00E396','#FEB019','#FF4560','#775DD0','#546E7A','#26a69a','#D10CE8'];
 
+// "expense" draws in red, "balance" in green with negative values in red.
+function _chartColor(colorRole, fallback) {
+    const cs = getComputedStyle(document.documentElement);
+    if (colorRole === 'expense') {
+        return cs.getPropertyValue('--error-color').trim() || '#EF4444';
+    }
+    if (colorRole === 'balance') {
+        return cs.getPropertyValue('--success-color').trim() || '#16A34A';
+    }
+    return fallback;
+}
+
 function _chartTheme() {
     const cs = getComputedStyle(document.documentElement);
     const main   = cs.getPropertyValue('--main-color').trim()   || '#007BFF';
@@ -70,7 +82,7 @@ function loadGraph(container, dataPoints, currency, run) {
     el.after(legend);
 }
 
-function loadLineGraph(container, dataPoints, currency, run) {
+function loadLineGraph(container, dataPoints, currency, run, colorRole) {
     if (!run) return;
 
     const t = _chartTheme();
@@ -116,7 +128,7 @@ function loadLineGraph(container, dataPoints, currency, run) {
                 style: { fontFamily: t.font, colors: t.text },
             },
         },
-        colors: [t.main],
+        colors: [_chartColor(colorRole, t.main)],
         stroke: { curve: 'smooth', width: 2 },
         fill: {
             type: 'gradient',
@@ -135,7 +147,7 @@ function loadLineGraph(container, dataPoints, currency, run) {
     chart.render();
 }
 
-function loadBarGraph(container, dataPoints, currency, run, thresholdLine) {
+function loadBarGraph(container, dataPoints, currency, run, thresholdLine, colorRole) {
     if (!run) return;
 
     const t = _chartTheme();
@@ -185,12 +197,15 @@ function loadBarGraph(container, dataPoints, currency, run, thresholdLine) {
                 style: { fontFamily: t.font, colors: t.text },
             },
         },
-        colors: [t.main],
+        colors: [_chartColor(colorRole, t.main)],
         plotOptions: {
             bar: {
                 columnWidth: '55%',
                 borderRadius: 4,
                 borderRadiusApplication: 'end',
+                colors: colorRole === 'balance'
+                    ? { ranges: [{ from: Number.MIN_SAFE_INTEGER, to: -0.01, color: errorColor }] }
+                    : {},
             },
         },
         dataLabels: { enabled: false },

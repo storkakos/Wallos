@@ -216,29 +216,29 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
         <div class="title"><?= translate('active_subscriptions', $i18n) ?></div>
       </div>
       <div class="statistic">
-        <span><?= CurrencyFormatter::format($totalCostPerMonth, $code) ?></span>
+        <span class="expense"><?= CurrencyFormatter::format($totalCostPerMonth, $code) ?></span>
         <div class="title"><?= translate('monthly_cost', $i18n) ?></div>
       </div>
       <div class="statistic">
-        <span><?= CurrencyFormatter::format($totalCostPerYear, $code) ?></span>
+        <span class="expense"><?= CurrencyFormatter::format($totalCostPerYear, $code) ?></span>
         <div class="title"><?= translate('yearly_cost', $i18n) ?></div>
       </div>
       <?php
       if ($totalCostPerMonth > 0) {
         ?>
         <div class="statistic">
-          <span><?= CurrencyFormatter::format($costPerDay, $code) ?></span>
+          <span class="expense"><?= CurrencyFormatter::format($costPerDay, $code) ?></span>
           <div class="title"><?= translate('cost_per_day', $i18n) ?></div>
         </div>
         <?php
       }
       ?>
       <div class="statistic">
-        <span><?= CurrencyFormatter::format($averageSubscriptionCost, $code) ?></span>
+        <span class="expense"><?= CurrencyFormatter::format($averageSubscriptionCost, $code) ?></span>
         <div class="title"><?= translate('average_monthly', $i18n) ?></div>
       </div>
       <div class="statistic short">
-        <span><?= CurrencyFormatter::format($mostExpensiveSubscription['price'], $code) ?></span>
+        <span class="expense"><?= CurrencyFormatter::format($mostExpensiveSubscription['price'], $code) ?></span>
         <div class="title"><?= translate('most_expensive', $i18n) ?></div>
         <?php
         if (isset($mostExpensiveSubscription['logo']) && $mostExpensiveSubscription['logo'] != '') {
@@ -260,7 +260,7 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
       if ($cheapestSubscription !== null) {
         ?>
         <div class="statistic short">
-          <span><?= CurrencyFormatter::format($cheapestSubscription['price'], $code) ?></span>
+          <span class="expense"><?= CurrencyFormatter::format($cheapestSubscription['price'], $code) ?></span>
           <div class="title"><?= translate('cheapest_subscription', $i18n) ?></div>
           <?php
           if (!empty($cheapestSubscription['logo'])) {
@@ -282,7 +282,7 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
       }
       ?>
       <div class="statistic">
-        <span><?= CurrencyFormatter::format($amountDueThisMonth, $code) ?></span>
+        <span class="expense"><?= CurrencyFormatter::format($amountDueThisMonth, $code) ?></span>
         <div class="title"><?= translate('amount_due', $i18n) ?></div>
       </div>
       <?php
@@ -302,24 +302,21 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
   if ($totalIncomePerMonth > 0) {
     ?>
     <section class="stats-section">
-      <h2><?= translate('income_and_balance', $i18n) ?></h2>
-      <div class="statistics two-columns">
-        <div class="statistic">
-          <span><?= CurrencyFormatter::format($totalIncomePerMonth, $code) ?></span>
-          <div class="title"><?= translate('monthly_income', $i18n) ?></div>
-        </div>
-        <div class="statistic">
-          <span><?= CurrencyFormatter::format($totalIncomePerYear, $code) ?></span>
-          <div class="title"><?= translate('yearly_income', $i18n) ?></div>
-        </div>
-        <div class="statistic">
-          <span class="<?= $balancePerMonth < 0 ? 'negative' : 'income' ?>"><?= CurrencyFormatter::format($balancePerMonth, $code) ?></span>
-          <div class="title"><?= translate('monthly_balance', $i18n) ?></div>
-        </div>
-        <div class="statistic">
-          <span class="<?= $balancePerYear < 0 ? 'negative' : 'income' ?>"><?= CurrencyFormatter::format($balancePerYear, $code) ?></span>
-          <div class="title"><?= translate('yearly_balance', $i18n) ?></div>
-        </div>
+      <h2><?= translate('income_and_expenses', $i18n) ?></h2>
+      <div class="statistics">
+        <?php foreach ([
+                ['monthly_income', $totalIncomePerMonth, 'income'],
+                ['monthly_expenses', 0 - $totalCostPerMonth, 'expense'],
+                ['monthly_balance', $balancePerMonth, $balancePerMonth < 0 ? 'negative' : 'income'],
+                ['yearly_income', $totalIncomePerYear, 'income'],
+                ['yearly_expenses', 0 - $totalCostPerYear, 'expense'],
+                ['yearly_balance', $balancePerYear, $balancePerYear < 0 ? 'negative' : 'income'],
+            ] as [$tileLabel, $tileValue, $tileClass]) { ?>
+          <div class="statistic">
+            <span class="<?= $tileClass ?>"><?= CurrencyFormatter::format($tileValue, $code) ?></span>
+            <div class="title"><?= translate($tileLabel, $i18n) ?></div>
+          </div>
+        <?php } ?>
       </div>
     </section>
     <?php
@@ -355,7 +352,7 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
           if ($showProjectionGraph && $heaviestMonth !== null) {
             ?>
             <div class="statistic short">
-              <span><?= CurrencyFormatter::format($heaviestMonth['total'], $code) ?></span>
+              <span class="expense"><?= CurrencyFormatter::format($heaviestMonth['total'], $code) ?></span>
               <div class="title"><?= translate('heaviest_month', $i18n) ?></div>
               <div class="subtitle capitalize"><?= $heaviestMonth['label'] ?></div>
             </div>
@@ -595,7 +592,7 @@ $potentialMonthlySavings = get_upcoming_cancellations_monthly_value($upcomingCan
           if ($totalLifetimeSpend > 0) {
             ?>
             <div class="statistic">
-              <span><?= CurrencyFormatter::format($totalLifetimeSpend, $code) ?></span>
+              <span class="expense"><?= CurrencyFormatter::format($totalLifetimeSpend, $code) ?></span>
               <div class="title"><?= translate('all_time_spend', $i18n) ?></div>
             </div>
             <?php
@@ -733,9 +730,9 @@ if ($showAnyGraph) {
   <script src="scripts/libs/apexcharts.min.js"></script>
   <script type="text/javascript">
     window.onload = function () {
-      loadLineGraph("totalMonthlyCostChart", <?php echo json_encode($totalMonthlyCostDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showTotalMonthlyCostGraph ? 1 : 0 ?>);
-      loadBarGraph("projectionChart", <?php echo json_encode($projectionDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showProjectionGraph ? 1 : 0 ?>, <?= isset($budget) && $budget > 0 ? $budget : 'null' ?>);
-      loadBarGraph("projectedBalanceChart", <?php echo json_encode($projectedBalanceDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showProjectedBalanceGraph ? 1 : 0 ?>, null);
+      loadLineGraph("totalMonthlyCostChart", <?php echo json_encode($totalMonthlyCostDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showTotalMonthlyCostGraph ? 1 : 0 ?>, "expense");
+      loadBarGraph("projectionChart", <?php echo json_encode($projectionDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showProjectionGraph ? 1 : 0 ?>, <?= isset($budget) && $budget > 0 ? $budget : 'null' ?>, "expense");
+      loadBarGraph("projectedBalanceChart", <?php echo json_encode($projectedBalanceDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showProjectedBalanceGraph ? 1 : 0 ?>, null, "balance");
       loadGraph("categorySplitChart", <?php echo json_encode($categoryDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showCategoryCostGraph ? 1 : 0 ?>);
       loadGraph("memberSplitChart", <?php echo json_encode($memberDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showMemberCostGraph ? 1 : 0 ?>);
       loadGraph("paymentMethidSplitChart", <?php echo json_encode($paymentMethodDataPoints, JSON_NUMERIC_CHECK); ?>, "<?= $code ?>", <?= $showPaymentMethodsGraph ? 1 : 0 ?>);

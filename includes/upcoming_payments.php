@@ -34,9 +34,10 @@ function normalize_upcoming_payments_limit($limit)
  * @param SQLite3 $db
  * @param int      $userId
  * @param mixed    $limit
+ * @param string   $type   'expense' or 'income'
  * @return array
  */
-function get_upcoming_payments($db, $userId, $limit)
+function get_upcoming_payments($db, $userId, $limit, $type = 'expense')
 {
     $limit = normalize_upcoming_payments_limit($limit);
 
@@ -46,10 +47,12 @@ function get_upcoming_payments($db, $userId, $limit)
           AND next_payment >= date('now')
           AND inactive = 0
           AND cycle != 5
-        ORDER BY next_payment ASC
+          AND type = :type
+        ORDER BY next_payment ASC, price DESC
         LIMIT :limit");
     $stmt->bindValue(':userId', $userId, SQLITE3_INTEGER);
     $stmt->bindValue(':limit', $limit, SQLITE3_INTEGER);
+    $stmt->bindValue(':type', $type, SQLITE3_TEXT);
     $result = $stmt->execute();
 
     $subscriptions = [];

@@ -323,7 +323,7 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
                     <span class="next"><?= formatDate($subscription['next_payment'], $lang) ?></span>
                     <span class="price">
                         <span class="value">
-                            <?= ($isIncome ? '+' : '') . formatPrice($subscription['price'], $subscription['currency_code'], $currencies) ?>
+                            <?= ($isIncome ? '+' : '-') . formatPrice($subscription['price'], $subscription['currency_code'], $currencies) ?>
                             <?php
                             if (isset($subscription['original_price']) && $subscription['original_price'] != $subscription['price']) {
                                 ?>

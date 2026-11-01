@@ -114,7 +114,7 @@ wallos_test('both places that build the list pass the type on, and the list mark
 
     $list = income_source('includes/list_subscriptions.php');
     assert_contains('$subscriptionExtraClasses .= " income";', $list, 'income gets its CSS class');
-    assert_contains("(\$isIncome ? '+' : '')", $list, 'income gets a plus sign');
+    assert_contains("(\$isIncome ? '+' : '-')", $list, 'income gets a plus sign and expenses a minus');
     assert_contains('.subscription.income .price .value', income_source('styles/styles.css'), 'income is styled');
 });
 
@@ -137,7 +137,7 @@ wallos_test('the statistics keep income out of costs and work out the balance', 
     );
 
     assert_contains("\$subscription['type'] === 'income'", income_source('includes/stats_extra_calculations.php'), 'the extra statistics skip income');
-    assert_contains("translate('income_and_balance', \$i18n)", income_source('stats.php'), 'the section is rendered');
+    assert_contains("translate('income_and_expenses', \$i18n)", income_source('stats.php'), 'the section is rendered');
     assert_contains('if ($totalIncomePerMonth > 0) {', income_source('stats.php'), 'and only when there is income');
 });
 
@@ -160,21 +160,23 @@ wallos_test('every other cost output excludes income', function () {
 wallos_test('the dashboard shows income and balance only when there is income', function () {
     $dashboard = income_source('index.php');
     assert_contains('if ($totalIncomePerMonth > 0) {', $dashboard, 'the block depends on income');
-    assert_contains("translate('monthly_balance', \$i18n)", $dashboard, 'monthly balance');
-    assert_contains("translate('yearly_balance', \$i18n)", $dashboard, 'yearly balance');
+    foreach (['monthly_income', 'monthly_expenses', 'monthly_balance', 'yearly_income', 'yearly_expenses', 'yearly_balance'] as $tile) {
+        assert_contains("'$tile'", $dashboard, $tile);
+    }
     assert_contains("\$balancePerMonth < 0 ? 'negative' : 'income'", $dashboard, 'a negative balance is marked');
 });
 
 wallos_test('every dashboard list and the calendar mark income', function () {
     $dashboard = income_source('index.php');
     assert_contains('auto_renew, type FROM subscriptions', $dashboard, 'the overdue query selects the type');
-    assert_same(3, substr_count($dashboard, "(\$isIncome ? '+' : '') . formatPrice"), 'overdue, upcoming and cancellation cards show a plus');
-    assert_same(3, substr_count($dashboard, "subscription-item-price<?= \$isIncome ? ' income' : '' ?>"), 'and are styled');
+    assert_same(3, substr_count($dashboard, "(\$isIncome ? '+' : '-') . formatPrice"), 'overdue, upcoming and cancellation cards show a sign');
+    assert_same(3, substr_count($dashboard, "subscription-item-price <?= \$isIncome ? 'income' : 'expense' ?>"), 'and are coloured');
     assert_contains('next_payment, inactive, type', income_source('includes/upcoming_payments.php'), 'the upcoming query selects the type');
 
     $calendar = income_source('calendar.php');
-    assert_contains("calendar-event<?= \$isIncome ? ' income' : '' ?>", $calendar, 'calendar entries get the class');
-    assert_contains("(\$isIncome ? '+' : '') . formatCalendarPrice", $calendar, 'calendar entries show a plus');
+    assert_contains("calendar-event <?= \$isIncome ? 'income' : 'expense' ?>", $calendar, 'calendar entries get the class');
+    assert_contains('$totalIncomeThisMonth += $convertedPrice;', $calendar, 'the month sums its income');
+    assert_contains("(\$isIncome ? '+' : '-') . formatCalendarPrice", $calendar, 'calendar entries show a sign');
 });
 
 wallos_test('upcoming payments carry the type of each row', function () {
@@ -182,10 +184,24 @@ wallos_test('upcoming payments carry the type of each row', function () {
     wallos_test_create_user($db, 1, 'alice');
     income_insert($db, 'Salary', 3000, 'income');
 
-    $rows = get_upcoming_payments($db, 1, 3);
+    income_insert($db, 'Rent', 800, 'expense');
 
-    assert_same('income', $rows[0]['type'], 'the dashboard can tell income apart');
+    $payments = get_upcoming_payments($db, 1, 3);
+    $income = get_upcoming_payments($db, 1, 3, 'income');
+
+    assert_same(['Rent'], array_column($payments, 'name'), 'upcoming payments are expenses only');
+    assert_same(['Salary'], array_column($income, 'name'), 'upcoming income is its own list');
+
+    income_insert($db, 'Small side job', 50, 'income');
+    $income = get_upcoming_payments($db, 1, 3, 'income');
+    assert_same('Salary', $income[0]['name'], 'on the same day the larger amount comes first');
     $db->close();
+});
+
+wallos_test('the dashboard only shows the budget block when a budget is set', function () {
+    $dashboard = income_source('index.php');
+    assert_contains('if (isset($monthlyBudget) && $monthlyBudget > 0) {', $dashboard, 'no budget, no block');
+    assert_contains("translate('upcoming_income', \$i18n)", $dashboard, 'upcoming income has its own section');
 });
 
 wallos_test('the statistics project the balance and colour it', function () {
@@ -197,7 +213,9 @@ wallos_test('the statistics project the balance and colour it', function () {
     $stats = income_source('stats.php');
     assert_contains('loadBarGraph("projectedBalanceChart"', $stats, 'the chart is drawn');
     assert_contains("\$balancePerMonth < 0 ? 'negative' : 'income'", $stats, 'a negative balance is marked');
-    assert_contains('statistics two-columns', $stats, 'the tiles stay together');
+    assert_contains('"projectedBalanceChart"', $stats, 'the balance chart is present');
+    assert_contains('null, "balance");', $stats, 'and colours by sign');
+    assert_contains("['yearly_expenses', 0 - \$totalCostPerYear, 'expense']", $stats, 'expenses have their own tile, shown as negative');
 });
 
 wallos_test('the form rewords itself for income', function () {
@@ -228,7 +246,7 @@ wallos_test('a bulk action sets the type and only accepts income or expense', fu
 wallos_test('the details popup marks income', function () {
     $script = income_source('scripts/subscription-details.js');
     assert_contains("detailsAddChip(chips, strings.income, 'ok');", $script, 'income chip');
-    assert_contains("(isIncome ? '+' : '')", $script, 'plus sign');
+    assert_contains("(isIncome ? '+' : '-')", $script, 'sign');
 });
 
 wallos_test('notifications and calendar exports label income', function () {
@@ -252,7 +270,7 @@ wallos_test('the income strings exist in the source language', function () {
     $i18n = [];
     include WALLOS_ROOT . '/includes/i18n/en.php';
 
-    foreach (['entry_type', 'expense', 'income', 'income_and_balance', 'monthly_income', 'yearly_income', 'monthly_balance', 'yearly_balance'] as $key) {
+    foreach (['entry_type', 'expense', 'income', 'income_and_expenses', 'upcoming_income', 'monthly_expenses', 'yearly_expenses', 'total_income', 'balance', 'monthly_income', 'yearly_income', 'monthly_balance', 'yearly_balance'] as $key) {
         assert_true(isset($i18n[$key]), "en.php has $key");
     }
 });
