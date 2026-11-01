@@ -6,6 +6,7 @@
 
 require_once WALLOS_ROOT . '/includes/budget_period_calculations.php';
 require_once WALLOS_ROOT . '/includes/currency_rates.php';
+require_once WALLOS_ROOT . '/includes/upcoming_payments.php';
 
 /**
  * Inserts a monthly item due tomorrow; omits type when it is null, so the
@@ -154,6 +155,37 @@ wallos_test('every other cost output excludes income', function () {
 
     assert_contains("\$subscription['type'] === 'income'", income_source('calendar.php'), 'calendar totals');
     assert_contains("(\$subscription['type'] ?? 'expense') === 'income'", income_source('includes/upcoming_cancellations.php'), 'potential savings');
+});
+
+wallos_test('the dashboard shows income and balance only when there is income', function () {
+    $dashboard = income_source('index.php');
+    assert_contains('if ($totalIncomePerMonth > 0) {', $dashboard, 'the block depends on income');
+    assert_contains("translate('monthly_balance', \$i18n)", $dashboard, 'monthly balance');
+    assert_contains("translate('yearly_balance', \$i18n)", $dashboard, 'yearly balance');
+    assert_contains("\$balancePerMonth < 0 ? 'negative' : 'income'", $dashboard, 'a negative balance is marked');
+});
+
+wallos_test('every dashboard list and the calendar mark income', function () {
+    $dashboard = income_source('index.php');
+    assert_contains('auto_renew, type FROM subscriptions', $dashboard, 'the overdue query selects the type');
+    assert_same(3, substr_count($dashboard, "(\$isIncome ? '+' : '') . formatPrice"), 'overdue, upcoming and cancellation cards show a plus');
+    assert_same(3, substr_count($dashboard, "subscription-item-price<?= \$isIncome ? ' income' : '' ?>"), 'and are styled');
+    assert_contains('next_payment, inactive, type', income_source('includes/upcoming_payments.php'), 'the upcoming query selects the type');
+
+    $calendar = income_source('calendar.php');
+    assert_contains("calendar-event<?= \$isIncome ? ' income' : '' ?>", $calendar, 'calendar entries get the class');
+    assert_contains("(\$isIncome ? '+' : '') . formatCalendarPrice", $calendar, 'calendar entries show a plus');
+});
+
+wallos_test('upcoming payments carry the type of each row', function () {
+    $db = wallos_test_open_database();
+    wallos_test_create_user($db, 1, 'alice');
+    income_insert($db, 'Salary', 3000, 'income');
+
+    $rows = get_upcoming_payments($db, 1, 3);
+
+    assert_same('income', $rows[0]['type'], 'the dashboard can tell income apart');
+    $db->close();
 });
 
 wallos_test('the income strings exist in the source language', function () {

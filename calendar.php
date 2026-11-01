@@ -293,7 +293,8 @@ if ($weekStartsSunday) {
               <?php if (!empty($paymentsByDay[$day])) { ?>
                 <div class="calendar-cell-content">
                   <?php foreach ($paymentsByDay[$day] as $payment) { ?>
-                    <div class="calendar-event" onClick="showSubscriptionDetails(event, <?= $payment['id'] ?>)"
+                    <?php $isIncome = $payment['type'] === 'income'; ?>
+                    <div class="calendar-event<?= $isIncome ? ' income' : '' ?>" onClick="showSubscriptionDetails(event, <?= $payment['id'] ?>)"
                       title="<?= htmlspecialchars($payment['name']) ?>">
                       <span class="calendar-event-title">
                         <?php if ($payment['cycle'] != 5) { ?>
@@ -304,7 +305,7 @@ if ($weekStartsSunday) {
                         <?php } ?>
                         <span class="calendar-event-name"><?= htmlspecialchars($payment['name']) ?></span>
                       </span>
-                      <span class="calendar-event-price"><?= formatCalendarPrice($payment['price'], $payment['currency_id'], $calendarCurrencies) ?></span>
+                      <span class="calendar-event-price"><?= ($isIncome ? '+' : '') . formatCalendarPrice($payment['price'], $payment['currency_id'], $calendarCurrencies) ?></span>
                     </div>
                   <?php } ?>
                 </div>
