@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/currency_rates.php';
+require_once __DIR__ . '/variable_pricing.php';
 
 if (!function_exists('sanitizeBudgetPeriodType')) {
     function sanitizeBudgetPeriodType($periodType)
@@ -267,6 +268,7 @@ if (!function_exists('computeAmountNeededInPeriod')) {
     {
         $rangeStart = createDateAtMidnight($today);
         $amountNeeded = 0.0;
+        $historyIndex = load_price_history_index($database, (int) $userId);
 
         foreach ($subscriptions as $subscription) {
             $isActive = isset($subscription['inactive']) && (int) $subscription['inactive'] === 0;
@@ -276,6 +278,18 @@ if (!function_exists('computeAmountNeededInPeriod')) {
 
             $occurrences = getSubscriptionOccurrencesInRange($subscription, $rangeStart, $periodEnd);
             if (empty($occurrences)) {
+                continue;
+            }
+
+            if (subscription_has_variable_price($subscription)) {
+                foreach ($occurrences as $occurrence) {
+                    $amountNeeded += convertPriceToMainCurrency(
+                        effective_subscription_price($subscription, $occurrence->format('Y-m'), $historyIndex),
+                        $subscription['currency_id'],
+                        $database,
+                        $userId
+                    );
+                }
                 continue;
             }
 

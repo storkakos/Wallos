@@ -1,6 +1,7 @@
 <?php
 require_once 'includes/header.php';
 require_once 'includes/currency_rates.php';
+require_once 'includes/variable_pricing.php';
 
 function getPriceConverted($price, $currency, $database, $userId)
 {
@@ -203,7 +204,10 @@ if ($weekStartsSunday) {
     $startOfMonth = strtotime($monthKey . '-01');
     $paymentsByDay = [];
 
-    $registerPayment = function ($date, $subscription) use (&$paymentsByDay, &$totalCostThisMonth, &$totalIncomeThisMonth, &$numberOfSubscriptionsToPayThisMonth, &$amountDueThisMonth, $today, $db, $userId) {
+    $priceHistoryIndex = load_price_history_index($db, (int) $userId);
+
+    $registerPayment = function ($date, $subscription) use (&$paymentsByDay, &$totalCostThisMonth, &$totalIncomeThisMonth, &$numberOfSubscriptionsToPayThisMonth, &$amountDueThisMonth, $today, $db, $userId, $monthKey, $priceHistoryIndex) {
+      $subscription['price'] = effective_subscription_price($subscription, $monthKey, $priceHistoryIndex);
       $paymentsByDay[(int) date('j', $date)][] = $subscription;
       $convertedPrice = getPriceConverted($subscription['price'], $subscription['currency_id'], $db, $userId);
       // Income shows on its day but is not something to pay

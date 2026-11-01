@@ -37,27 +37,29 @@ function normalize_upcoming_payments_limit($limit)
  * @param string   $type   'expense' or 'income'
  * @return array
  */
+require_once __DIR__ . '/paid_status.php';
+
 function get_upcoming_payments($db, $userId, $limit, $type = 'expense')
 {
     $limit = normalize_upcoming_payments_limit($limit);
 
-    $stmt = $db->prepare("SELECT id, logo, logo_text_color, logo_variant, name, price, currency_id, next_payment, inactive, type
+    $stmt = $db->prepare("SELECT id, logo, logo_text_color, logo_variant, name, price, currency_id, next_payment, inactive, type, cycle, frequency, paid_at, has_variable_price
         FROM subscriptions
         WHERE user_id = :userId
           AND next_payment >= date('now')
           AND inactive = 0
           AND cycle != 5
           AND type = :type
-        ORDER BY next_payment ASC, price DESC
-        LIMIT :limit");
+        ORDER BY next_payment ASC, price DESC");
     $stmt->bindValue(':userId', $userId, SQLITE3_INTEGER);
-    $stmt->bindValue(':limit', $limit, SQLITE3_INTEGER);
     $stmt->bindValue(':type', $type, SQLITE3_TEXT);
     $result = $stmt->execute();
 
     $subscriptions = [];
-    while ($result && ($row = $result->fetchArray(SQLITE3_ASSOC))) {
-        $subscriptions[] = $row;
+    while (count($subscriptions) < $limit && $result && ($row = $result->fetchArray(SQLITE3_ASSOC))) {
+        if (!isPaidThisCycle($row['paid_at'] ?? null, $row['cycle'], $row['frequency'], $row['next_payment'])) {
+            $subscriptions[] = $row;
+        }
     }
 
     return $subscriptions;

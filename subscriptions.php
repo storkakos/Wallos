@@ -5,6 +5,7 @@ require_once 'includes/getdbkeys.php';
 require_once 'includes/logo_theme_variant.php';
 
 include_once 'includes/list_subscriptions.php';
+require_once 'includes/variable_pricing.php';
 require_once 'includes/subscription_payers.php';
 require_once 'includes/subscription_categories.php';
 
@@ -274,6 +275,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
     );
 
     $print = [];
+    $priceHistoryIndex = load_price_history_index($db, (int) $userId);
     foreach ($subscriptions as $subscription) {
       if ($subscription['inactive'] == 1 && isset($settings['hideDisabledSubscriptions']) && $settings['hideDisabledSubscriptions'] === 'true') {
         continue;
@@ -304,14 +306,17 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
       $print[$id]['category_ids'] = $categoriesBySubscription[$id] ?? [];
       $print[$id]['payer_user_id'] = $subscription['payer_user_id'];
       $print[$id]['payer_user_ids'] = $payersBySubscription[$id] ?? [];
-      $print[$id]['price'] = floatval($subscription['price']);
-      $print[$id]['sort_price'] = getSortPrice($subscription['price'], $subscription['currency_id'], $mainCurrencyId, $cycle, $frequency, $settings, $db);
+      $effectivePrice = effective_subscription_price($subscription, date('Y-m'), $priceHistoryIndex);
+      $print[$id]['price'] = $effectivePrice;
+      $print[$id]['has_variable_price'] = subscription_has_variable_price($subscription) ? 1 : 0;
+      $print[$id]['sort_price'] = getSortPrice($effectivePrice, $subscription['currency_id'], $mainCurrencyId, $cycle, $frequency, $settings, $db);
       $print[$id]['progress'] = getSubscriptionProgress($cycle, $frequency, $subscription['next_payment']);
       $print[$id]['inactive'] = $subscription['inactive'];
       $print[$id]['url'] = $subscription['url'];
       $print[$id]['notes'] = $subscription['notes'];
       $print[$id]['replacement_subscription_id'] = $subscription['replacement_subscription_id'];
       $print[$id]['type'] = $subscription['type'];
+      $print[$id]['paid_this_cycle'] = isPaidThisCycle($subscription['paid_at'] ?? null, $subscription['cycle'], $subscription['frequency'], $subscription['next_payment']);
 
       if (isset($settings['convertCurrency']) && $settings['convertCurrency'] === 'true' && $currencyId != $mainCurrencyId) {
         $print[$id]['price'] = getPriceConverted($print[$id]['price'], $currencyId, $db);
@@ -321,7 +326,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
         $print[$id]['price'] = getPricePerMonth($cycle, $frequency, $print[$id]['price']);
       }
       if (isset($settings['showOriginalPrice']) && $settings['showOriginalPrice'] === 'true') {
-        $print[$id]['original_price'] = floatval($subscription['price']);
+        $print[$id]['original_price'] = $effectivePrice;
         $print[$id]['original_currency_code'] = $currencies[$subscription['currency_id']]['code'];
       }
     }
@@ -444,6 +449,33 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
         }
         ?>
       </select>
+    </div>
+
+    <div class="form-group">
+      <div class="inline grow">
+        <input type="checkbox" id="has_variable_price" name="has_variable_price"
+          onchange="togglePriceHistorySection()">
+        <label for="has_variable_price" class="grow"
+          data-income-label="<?= translate('variable_income', $i18n) ?>"><?= translate('variable_price', $i18n) ?></label>
+      </div>
+      <div id="price-history-section" class="price-history-section" style="display:none;"
+        data-limit="<?= WALLOS_PRICE_HISTORY_LIMIT ?>"
+        data-monthly-only="<?= htmlspecialchars(translate('variable_price_monthly_only', $i18n), ENT_QUOTES, 'UTF-8') ?>"
+        data-limit-message="<?= htmlspecialchars(translate('price_history_limit', $i18n), ENT_QUOTES, 'UTF-8') ?>"
+        data-invalid-message="<?= htmlspecialchars(translate('price_history_invalid', $i18n), ENT_QUOTES, 'UTF-8') ?>"
+        data-duplicate-message="<?= htmlspecialchars(translate('price_history_duplicate', $i18n), ENT_QUOTES, 'UTF-8') ?>"
+        data-amount-placeholder="<?= translate('price_history_amount', $i18n) ?>"
+        data-note-placeholder="<?= translate('price_history_note', $i18n) ?>"
+        data-remove-label="<?= translate('price_history_remove', $i18n) ?>">
+        <p class="price-history-hint"><?= translate('variable_price_hint', $i18n) ?></p>
+        <label><?= translate('price_history_label', $i18n) ?></label>
+        <input type="hidden" id="price_history" name="price_history" value="[]">
+        <div id="price-history-rows"></div>
+        <button type="button" class="button secondary-button thin" onclick="addPriceHistoryRow()">
+          <i class="fa-solid fa-circle-plus"></i>
+          <?= translate('price_history_add', $i18n) ?>
+        </button>
+      </div>
     </div>
 
     <div class="form-group">

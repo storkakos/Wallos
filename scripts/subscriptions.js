@@ -190,6 +190,8 @@ function resetForm() {
   replacementSubscription.classList.add("hide");
   const form = document.querySelector("#subs-form");
   form.reset();
+  clearPriceHistoryRows();
+  togglePriceHistorySection();
   multiSelectIds.forEach(id => {
     setMultiSelection(id, []);
     closeMultiSelect(id);
@@ -293,6 +295,11 @@ function fillEditFormFields(subscription) {
   const deleteButton = document.querySelector("#deletesub");
   deleteButton.style = 'display: block';
   deleteButton.setAttribute("onClick", `deleteSubscription(event, ${subscription.id})`);
+
+  document.querySelector("#has_variable_price").checked = !!subscription.has_variable_price;
+  clearPriceHistoryRows();
+  (subscription.price_history || []).forEach(entry => addPriceHistoryRow(entry));
+  togglePriceHistorySection();
 
   const modal = document.getElementById('subscription-form');
   modal.classList.add("is-open");
@@ -715,6 +722,9 @@ function fetchSubscriptions(id, event, initiator) {
   if (activeFilters['state'] !== "") {
     getSubscriptions += getSubscriptions.includes("?") ? `&state=${activeFilters['state']}` : `?state=${activeFilters['state']}`;
   }
+  if (activeFilters['paidStatus'] !== "") {
+    getSubscriptions += getSubscriptions.includes("?") ? `&paidStatus=${activeFilters['paidStatus']}` : `?paidStatus=${activeFilters['paidStatus']}`;
+  }
   if (activeFilters['type'] !== "") {
     getSubscriptions += getSubscriptions.includes("?") ? `&type=${activeFilters['type']}` : `?type=${activeFilters['type']}`;
   }
@@ -864,12 +874,14 @@ document.addEventListener('DOMContentLoaded', function () {
   if (cycleSelectEl) {
     cycleSelectEl.addEventListener("change", function () {
       toggleOneTimeCycleUI(this.value === "5");
+      togglePriceHistorySection();
     });
   }
 });
 
 document.addEventListener('DOMContentLoaded', function () {
   initMultiSelects();
+  document.querySelector("#frequency")?.addEventListener("change", togglePriceHistorySection);
 
   const subscriptionForm = document.querySelector("#subs-form");
   const submitButton = document.querySelector("#save-button");
@@ -878,6 +890,10 @@ document.addEventListener('DOMContentLoaded', function () {
   subscriptionForm.addEventListener("submit", function (e) {
     e.preventDefault();
 
+    togglePriceHistorySection();
+    if (!subscriptionForm.reportValidity() || !syncPriceHistoryHiddenField()) {
+      return;
+    }
     submitButton.disabled = true;
 
     const cycleVal = document.querySelector("#cycle")?.value;
@@ -1030,6 +1046,7 @@ activeFilters['payments'] = [];
 activeFilters['state'] = "";
 activeFilters['renewalType'] = "";
 activeFilters['type'] = "";
+activeFilters['paidStatus'] = "";
 activeFilters['notifications'] = [];
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1136,6 +1153,18 @@ document.querySelectorAll('.filter-item').forEach(function (item) {
         });
         this.classList.add('selected');
       }
+    } else if (this.hasAttribute('data-paidstatus')) {
+      const paidStatus = this.getAttribute('data-paidstatus');
+      if (activeFilters['paidStatus'] === paidStatus) {
+        activeFilters['paidStatus'] = "";
+        this.classList.remove('selected');
+      } else {
+        activeFilters['paidStatus'] = paidStatus;
+        Array.from(this.parentNode.children).forEach(sibling => {
+          sibling.classList.remove('selected');
+        });
+        this.classList.add('selected');
+      }
     } else if (this.hasAttribute('data-entrytype')) {
       const entryType = this.getAttribute('data-entrytype');
       if (activeFilters['type'] === entryType) {
@@ -1162,7 +1191,7 @@ document.querySelectorAll('.filter-item').forEach(function (item) {
 
     if (activeFilters['categories'].length > 0 || activeFilters['members'].length > 0 ||
        activeFilters['payments'].length > 0 || activeFilters['state'] !== "" ||
-       activeFilters['renewalType'] !== "" || activeFilters['type'] !== "" || activeFilters['notifications'].length > 0) {
+       activeFilters['renewalType'] !== "" || activeFilters['type'] !== "" || activeFilters['paidStatus'] !== "" || activeFilters['notifications'].length > 0) {
       document.querySelector('#clear-filters').classList.remove('hide');
     } else {
       document.querySelector('#clear-filters').classList.add('hide');
@@ -1181,6 +1210,7 @@ function clearFilters() {
   activeFilters['state'] = "";
   activeFilters['renewalType'] = "";
   activeFilters['type'] = "";
+  activeFilters['paidStatus'] = "";
   activeFilters['notifications'] = [];
 
   document.querySelectorAll('.filter-item').forEach(function (item) {
@@ -1581,3 +1611,117 @@ document.addEventListener("DOMContentLoaded", function () {
     updateBulkSelection();
   }, true);
 });
+
+function togglePriceHistorySection() {
+  const checkbox = document.querySelector("#has_variable_price");
+  const section = document.querySelector("#price-history-section");
+  if (!checkbox || !section) {
+    return;
+  }
+  const supported = document.querySelector("#cycle")?.value === "3"
+    && document.querySelector("#frequency")?.value === "1";
+  checkbox.setCustomValidity(checkbox.checked && !supported ? section.dataset.monthlyOnly : "");
+  section.style.display = checkbox.checked ? "block" : "none";
+  section.querySelectorAll("input:not([type=hidden])").forEach(input => {
+    input.disabled = !checkbox.checked;
+    input.required = checkbox.checked && !input.classList.contains("price-history-note");
+  });
+}
+
+function clearPriceHistoryRows() {
+  const container = document.querySelector("#price-history-rows");
+  if (container) {
+    container.replaceChildren();
+  }
+  const hidden = document.querySelector("#price_history");
+  if (hidden) {
+    hidden.value = "[]";
+  }
+}
+
+function addPriceHistoryRow(entry) {
+  const container = document.querySelector("#price-history-rows");
+  const section = document.querySelector("#price-history-section");
+  if (!container || !section) {
+    return;
+  }
+
+  const limit = Number(section.dataset.limit);
+  if (!entry && container.children.length >= limit) {
+    showErrorMessage(section.dataset.limitMessage);
+    return;
+  }
+  const today = new Date();
+  const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const period = document.createElement("input");
+  period.type = "month";
+  period.className = "price-history-period";
+  period.value = entry && entry.period ? entry.period : currentMonth;
+
+  const price = document.createElement("input");
+  price.type = "number";
+  price.step = "0.01";
+  price.className = "price-history-price";
+  price.placeholder = section.dataset.amountPlaceholder || "";
+  price.value = entry && entry.price !== undefined && entry.price !== null ? entry.price : "";
+
+  const note = document.createElement("input");
+  note.type = "text";
+  note.maxLength = 200;
+  note.className = "price-history-note";
+  note.placeholder = section.dataset.notePlaceholder || "";
+  note.value = entry && entry.note ? entry.note : "";
+
+  const row = document.createElement("div");
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "image-button medium";
+  remove.title = section.dataset.removeLabel || "";
+  remove.addEventListener("click", function () {
+    row.remove();
+  });
+  const icon = document.createElement("i");
+  icon.className = "fa-solid fa-xmark";
+  remove.appendChild(icon);
+
+  row.className = "price-history-row";
+  row.append(period, price, note, remove);
+  container.appendChild(row);
+  togglePriceHistorySection();
+}
+
+function syncPriceHistoryHiddenField() {
+  const hidden = document.querySelector("#price_history");
+  if (!hidden) {
+    return true;
+  }
+  const checkbox = document.querySelector("#has_variable_price");
+  if (!checkbox || !checkbox.checked) {
+    hidden.value = "[]";
+    return true;
+  }
+  const section = document.querySelector("#price-history-section");
+  const rows = document.querySelectorAll("#price-history-rows .price-history-row");
+  if (rows.length > Number(section.dataset.limit)) {
+    showErrorMessage(section.dataset.limitMessage);
+    return false;
+  }
+  const byPeriod = {};
+  for (const row of rows) {
+    const period = row.querySelector(".price-history-period")?.value || "";
+    const priceStr = row.querySelector(".price-history-price")?.value || "";
+    const note = row.querySelector(".price-history-note")?.value || "";
+    const price = Number(priceStr);
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period) || priceStr === "" || !Number.isFinite(price)) {
+      showErrorMessage(section.dataset.invalidMessage);
+      return false;
+    }
+    if (Object.hasOwn(byPeriod, period)) {
+      showErrorMessage(section.dataset.duplicateMessage);
+      return false;
+    }
+    byPeriod[period] = { period, price, note };
+  }
+  hidden.value = JSON.stringify(Object.keys(byPeriod).sort().map(period => byPeriod[period]));
+  return true;
+}

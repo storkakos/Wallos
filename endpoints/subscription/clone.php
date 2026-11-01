@@ -3,6 +3,7 @@ require_once '../../includes/connect_endpoint.php';
 require_once '../../includes/validate_endpoint.php';
 require_once '../../includes/subscription_payers.php';
 require_once '../../includes/subscription_categories.php';
+require_once '../../includes/variable_pricing.php';
 
 $postData = file_get_contents("php://input");
 $data = json_decode($postData, true);
@@ -21,7 +22,7 @@ if ($subscriptionToClone === false) {
     ]));
 }
 
-$query = "INSERT INTO subscriptions (name, logo, price, currency_id, next_payment, auto_renew, start_date, cycle, frequency, notes, payment_method_id, payer_user_id, category_id, notify, url, inactive, notify_days_before, user_id, cancellation_date, replacement_subscription_id, type) VALUES (:name, :logo, :price, :currency_id, :next_payment, :auto_renew, :start_date, :cycle, :frequency, :notes, :payment_method_id, :payer_user_id, :category_id, :notify, :url, :inactive, :notify_days_before, :user_id, :cancellation_date, :replacement_subscription_id, :type)";
+$query = "INSERT INTO subscriptions (name, logo, price, currency_id, next_payment, auto_renew, start_date, cycle, frequency, notes, payment_method_id, payer_user_id, category_id, notify, url, inactive, notify_days_before, user_id, cancellation_date, replacement_subscription_id, type, has_variable_price) VALUES (:name, :logo, :price, :currency_id, :next_payment, :auto_renew, :start_date, :cycle, :frequency, :notes, :payment_method_id, :payer_user_id, :category_id, :notify, :url, :inactive, :notify_days_before, :user_id, :cancellation_date, :replacement_subscription_id, :type, :has_variable_price)";
 $cloneStmt = $db->prepare($query);
 $cloneStmt->bindValue(':name', $subscriptionToClone['name'], SQLITE3_TEXT);
 $cloneStmt->bindValue(':logo', $subscriptionToClone['logo'], SQLITE3_TEXT);
@@ -44,9 +45,18 @@ $cloneStmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
 $cloneStmt->bindValue(':cancellation_date', $subscriptionToClone['cancellation_date'], SQLITE3_TEXT);
 $cloneStmt->bindValue(':replacement_subscription_id', $subscriptionToClone['replacement_subscription_id'], SQLITE3_INTEGER);
 $cloneStmt->bindValue(':type', $subscriptionToClone['type'], SQLITE3_TEXT);
+$cloneStmt->bindValue(':has_variable_price', !empty($subscriptionToClone['has_variable_price']) ? 1 : 0, SQLITE3_INTEGER);
 
-if ($cloneStmt->execute()) {
-    $clonedId = $db->lastInsertRowID();
+try {
+    $clonedId = save_subscription_with_price_history(
+        $db, $cloneStmt, (int) $userId, null,
+        price_history_for_subscription($db, (int) $subscriptionId)
+    );
+} catch (InvalidArgumentException $error) {
+    die(json_encode(["success" => false, "message" => translate($error->getMessage(), $i18n)]));
+}
+
+if ($clonedId !== null) {
     saveSubscriptionPayers($db, $clonedId, getPayersBySubscription($db, [$subscriptionToClone])[$subscriptionToClone['id']] ?? []);
     saveSubscriptionCategories($db, $clonedId, getCategoriesBySubscription($db, [$subscriptionToClone])[$subscriptionToClone['id']] ?? []);
     $response = [

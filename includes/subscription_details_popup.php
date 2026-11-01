@@ -35,6 +35,12 @@ require_once __DIR__ . '/getdbkeys.php';
       aria-label="<?= translate('external_url', $i18n) ?>">
       <i class="fa-solid fa-globe"></i>
     </a>
+    <button type="button" class="button secondary-button details-action-button hide" id="details-mark-paid-button">
+      <i class="fa-solid fa-circle-check"></i>
+    </button>
+    <button type="button" class="button secondary-button details-action-button hide" id="details-unmark-paid-button">
+      <i class="fa-regular fa-circle-xmark"></i>
+    </button>
   </div>
   <div class="details-progress-track" id="details-progress-track">
     <span class="details-progress" id="details-progress"></span>
@@ -102,6 +108,14 @@ $detailsLookups = [
     'inactive' => translate('disabled', $i18n),
     'one_time' => translate('One-time', $i18n),
     'income' => translate('income', $i18n),
+    'paid' => translate('paid', $i18n),
+    'variable_price' => translate('variable_price', $i18n),
+    'variable_income' => translate('variable_income', $i18n),
+    'received' => translate('received', $i18n),
+    'mark_as_paid' => translate('mark_as_paid', $i18n),
+    'mark_as_unpaid' => translate('mark_as_unpaid', $i18n),
+    'mark_received' => translate('mark_received', $i18n),
+    'mark_not_received' => translate('mark_not_received', $i18n),
     'enabled' => translate('enabled', $i18n),
     'disabled' => translate('disabled', $i18n),
     'on_due_date' => translate('on_due_date', $i18n),

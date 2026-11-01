@@ -36,7 +36,7 @@ for ($i = 0; $i < 12; $i++) {
 $cycleStepUnits = [1 => 'days', 2 => 'weeks', 3 => 'months', 4 => 'years'];
 
 // Projection: walk renewals forward into the buckets
-$addToProjection = function ($subscription, $cycle, $frequency, $amount, $field) use (&$projectionBuckets, $projectionStart, $projectionEnd, $cycleStepUnits) {
+$addToProjection = function ($subscription, $cycle, $frequency, $amount, $field) use (&$projectionBuckets, $projectionStart, $projectionEnd, $cycleStepUnits, $priceHistoryIndex, $db, $userId) {
     $paymentTimestamp = strtotime($subscription['next_payment'] ?? '');
     if ($paymentTimestamp === false || !isset($cycleStepUnits[$cycle])) {
         return;
@@ -48,7 +48,9 @@ $addToProjection = function ($subscription, $cycle, $frequency, $amount, $field)
         if ($paymentDate >= $projectionStart) {
             $bucketKey = $paymentDate->format('Y-m');
             if (isset($projectionBuckets[$bucketKey])) {
-                $projectionBuckets[$bucketKey][$field] += $amount;
+                $projectionBuckets[$bucketKey][$field] += subscription_has_variable_price($subscription)
+                    ? getPriceConverted(effective_subscription_price($subscription, $bucketKey, $priceHistoryIndex), $subscription['currency_id'], $db, $userId)
+                    : $amount;
             }
         }
         $paymentDate->modify("+{$frequency} {$cycleStepUnits[$cycle]}");
@@ -74,7 +76,7 @@ if (isset($subscriptions)) {
     foreach ($subscriptions as $subscription) {
         $cycle = (int) $subscription['cycle'];
         $frequency = max(1, (int) $subscription['frequency']);
-        $convertedPrice = getPriceConverted($subscription['price'], $subscription['currency_id'], $db, $userId);
+        $convertedPrice = getPriceConverted(effective_subscription_price($subscription, $currentYearMonth, $priceHistoryIndex), $subscription['currency_id'], $db, $userId);
         $monthlyPrice = getPricePerMonth($cycle, $frequency, $convertedPrice);
 
         // Everything below describes spending, so income only feeds the projected balance

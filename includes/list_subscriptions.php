@@ -2,6 +2,7 @@
 
 require_once 'i18n/getlang.php';
 require_once __DIR__ . '/currency_rates.php';
+require_once __DIR__ . '/paid_status.php';
 
 function getBillingCycle($cycle, $frequency, $i18n)
 {
@@ -216,6 +217,11 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
         }
         $editLabel = translate($isIncome ? 'edit_income' : 'edit_subscription', $i18n);
         $renewLabel = translate($isIncome ? 'mark_received' : 'renew', $i18n);
+        // Manual income already has "Mark as received", which moves the date on.
+        $canTogglePaid = !$subscription['one_time'] && !$subscription['inactive'] && !($isIncome && $subscription['auto_renew'] != 1);
+        $paidThisCycle = !empty($subscription['paid_this_cycle']);
+        $markPaidLabel = translate($isIncome ? 'mark_received' : 'mark_as_paid', $i18n);
+        $unmarkPaidLabel = translate($isIncome ? 'mark_not_received' : 'mark_as_unpaid', $i18n);
         if ($sort == "category_id" && $subscription['category_id'] != $currentCategory) {
             ?>
             <div class="subscription-list-title">
@@ -270,6 +276,14 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
                         </button>
                         <?php
                     }
+                    if ($canTogglePaid && !$paidThisCycle) {
+                        ?>
+                        <button class="mobile-action-paid" onClick="markAsPaid(event, <?= $subscription['id'] ?>)">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <?= $markPaidLabel ?>
+                        </button>
+                        <?php
+                    }
                     ?>
                     <button class="mobile-action-edit" onClick="openEditSubscription(event, <?= $subscription['id'] ?>)">
                         <?php include $imagePath . "images/siteicons/svg/mobile-menu/edit.php"; ?>
@@ -285,6 +299,9 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
             }
             if ($subscription['auto_renew'] != 1) {
                 $subscriptionExtraClasses .= " manual";
+            }
+            if ($paidThisCycle) {
+                $subscriptionExtraClasses .= " paid";
             }
             if ($isIncome) {
                 $subscriptionExtraClasses .= " income";
@@ -332,6 +349,10 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
                     <span class="price">
                         <span class="value">
                             <?= ($isIncome ? '+' : '-') . formatPrice($subscription['price'], $subscription['currency_code'], $currencies) ?>
+                            <?php if (!empty($subscription['has_variable_price'])) { ?>
+                                <i class="fa-solid fa-wave-square variable-price-mark"
+                                    title="<?= translate('variable_price_this_month', $i18n) ?>"></i>
+                            <?php } ?>
                             <?php
                             if (isset($subscription['original_price']) && $subscription['original_price'] != $subscription['price']) {
                                 ?>
@@ -386,6 +407,15 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
                             </li>
                             <?php
                         }
+                        if ($canTogglePaid) {
+                            ?>
+                            <li class="mark-paid" title="<?= $paidThisCycle ? $unmarkPaidLabel : $markPaidLabel ?>"
+                                onClick="<?= $paidThisCycle ? 'unmarkPaid' : 'markAsPaid' ?>(event, <?= $subscription['id'] ?>)">
+                                <i class="<?= $paidThisCycle ? 'fa-regular fa-circle-xmark' : 'fa-solid fa-circle-check' ?>"></i>
+                                <?= $paidThisCycle ? $unmarkPaidLabel : $markPaidLabel ?>
+                            </li>
+                            <?php
+                        }
                         ?>
                     </ul>
                 </div>
@@ -415,6 +445,15 @@ function printSubscriptions($subscriptions, $sort, $categories, $members, $i18n,
                             onClick="unflipCard(<?= $subscription['id'] ?>); renewSubscription(event, <?= $subscription['id'] ?>)">
                             <i class="fa-solid fa-rotate-right"></i>
                             <?= $renewLabel ?>
+                        </button>
+                        <?php
+                    }
+                    if ($canTogglePaid) {
+                        ?>
+                        <button type="button" class="back-action"
+                            onClick="unflipCard(<?= $subscription['id'] ?>); <?= $paidThisCycle ? 'unmarkPaid' : 'markAsPaid' ?>(event, <?= $subscription['id'] ?>)">
+                            <i class="<?= $paidThisCycle ? 'fa-regular fa-circle-xmark' : 'fa-solid fa-circle-check' ?>"></i>
+                            <?= $paidThisCycle ? $unmarkPaidLabel : $markPaidLabel ?>
                         </button>
                         <?php
                     }

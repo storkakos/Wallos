@@ -129,7 +129,7 @@ wallos_test('the form offers the type and the script keeps it in step', function
 
 wallos_test('the statistics keep income out of costs and work out the balance', function () {
     $stats = income_source('includes/stats_calculations.php');
-    assert_contains('auto_renew, type FROM subscriptions', $stats, 'the query selects the type');
+    assert_contains('auto_renew, type, has_variable_price FROM subscriptions', $stats, 'the query selects the type');
     assert_contains('$totalIncomePerMonth += $price;', $stats, 'income is summed separately');
     assert_contains('$balancePerMonth = $totalIncomePerMonth - $totalCostPerMonth;', $stats, 'monthly balance');
     assert_contains('$balancePerYear = $balancePerMonth * 12;', $stats, 'yearly balance');
@@ -169,7 +169,7 @@ wallos_test('the dashboard shows income and balance only when there is income', 
 
 wallos_test('every dashboard list and the calendar mark income', function () {
     $dashboard = income_source('index.php');
-    assert_contains('auto_renew, type FROM subscriptions', $dashboard, 'the overdue query selects the type');
+    assert_contains('auto_renew, type, cycle', $dashboard, 'the overdue query selects the type');
     assert_same(3, substr_count($dashboard, "(\$isIncome ? '+' : '-') . formatPrice"), 'overdue, upcoming and cancellation cards show a sign');
     assert_same(3, substr_count($dashboard, "subscription-item-price <?= \$isIncome ? 'income' : 'expense' ?>"), 'and are coloured');
     assert_contains('next_payment, inactive, type', income_source('includes/upcoming_payments.php'), 'the upcoming query selects the type');
@@ -221,7 +221,7 @@ wallos_test('the statistics project the balance and colour it', function () {
 
 wallos_test('the form rewords itself for income', function () {
     $form = income_source('subscriptions.php');
-    assert_same(10, substr_count($form, 'data-income-label='), 'every expense-worded label has an income one');
+    assert_same(11, substr_count($form, 'data-income-label='), 'every expense-worded label has an income one');
     assert_same(2, substr_count($form, 'data-income-placeholder='), 'and so do the placeholders');
     assert_contains('onchange="applyEntryTypeLabels()"', $form, 'switching the type rewords the form');
 
@@ -337,6 +337,96 @@ wallos_test('the monthly API keeps cost and income apart', function () {
     assert_contains("if (\$subscription['type'] === 'income') {", $api, 'income is summed on its own');
     assert_contains("'monthly_balance' => number_format(\$monthlyIncome - \$monthlyCost, 2)", $api, 'the balance is income minus cost');
     assert_contains("NOT (type = 'income' AND cycle = 5)", $api, 'one-time income stays out, as in the statistics');
+});
+
+wallos_test('paid status follows the billing cycle and resets when it moves on', function () {
+    $today = new DateTime('today');
+    $next = (clone $today)->modify('+10 days')->format('Y-m-d');
+    $todayText = $today->format('Y-m-d');
+
+    assert_true(isPaidThisCycle($todayText, 3, 1, $next), 'paid today counts for the current cycle');
+    assert_true(!isPaidThisCycle(null, 3, 1, $next), 'never marked is not paid');
+    assert_true(!isPaidThisCycle($todayText, 5, 1, $next), 'one-time purchases have no cycle to pay');
+    assert_true(!isPaidThisCycle((clone $today)->modify('-40 days')->format('Y-m-d'), 3, 1, $next), 'a payment from the last cycle no longer counts');
+    assert_true(isPaidThisCycle($todayText, 3, 1, (clone $today)->modify('-1 day')->format('Y-m-d')), 'paying an overdue entry counts');
+});
+
+wallos_test('paid entries leave the upcoming lists and the limit still fills up', function () {
+    $db = wallos_test_open_database();
+    wallos_test_create_user($db, 1, 'alice');
+    $paidId = income_insert($db, 'Rent', 800, 'expense');
+    income_insert($db, 'Gas', 90, 'expense');
+    income_insert($db, 'Water', 30, 'expense');
+    income_insert($db, 'Phone', 20, 'expense');
+    $today = (new DateTime('today'))->format('Y-m-d');
+    $db->exec("UPDATE subscriptions SET paid_at = '$today' WHERE id = $paidId");
+
+    assert_same(['Gas', 'Water', 'Phone'], array_column(get_upcoming_payments($db, 1, 3), 'name'), 'the paid entry makes room for the next one');
+    $db->close();
+});
+
+wallos_test('the paid actions work everywhere the popup opens and fit income', function () {
+    $details = income_source('scripts/subscription-details.js');
+    assert_contains('function markAsPaid(event, id)', $details, 'the action lives in the shared popup script');
+    assert_not_contains('function markAsPaid', income_source('scripts/subscriptions.js'), 'and only there');
+    assert_contains("\$isIncome ? 'mark_received' : 'mark_as_paid'", income_source('includes/list_subscriptions.php'), 'income is received, not paid');
+    assert_contains("!(\$isIncome && \$subscription['auto_renew'] != 1)", income_source('includes/list_subscriptions.php'), 'manual income keeps one action');
+    assert_contains("in_array(\$_GET['paidStatus'], ['paid', 'unpaid'], true)", income_source('endpoints/subscriptions/get.php'), 'the filter value is whitelisted');
+});
+
+wallos_test('a variable amount reaches the budget for income and expenses alike', function () {
+    $db = wallos_test_open_database();
+    wallos_test_create_user($db, 1, 'alice');
+    $gasId = income_insert($db, 'Gas', 100, 'expense');
+    income_insert($db, 'Salary', 3000, 'income');
+    $month = (new DateTime('tomorrow'))->format('Y-m');
+    $db->exec("UPDATE subscriptions SET has_variable_price = 1 WHERE id = $gasId");
+    $db->exec("INSERT INTO subscription_price_history (subscription_id, period, price) VALUES ($gasId, '$month', 140)");
+
+    $rows = [];
+    $result = $db->query('SELECT * FROM subscriptions');
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $rows[] = $row;
+    }
+
+    assert_equals(140.0, computeAmountNeededInPeriod($rows, new DateTime('today'), new DateTime('+20 days'), $db, 1), 'the month\'s amount replaces the base price, and income stays out');
+    assert_same(140.0, effective_subscription_price($rows[0], $month, load_price_history_index($db, 1)), 'the helper agrees');
+    $db->close();
+});
+
+wallos_test('every file that uses the shared helpers loads them', function () {
+    // php -l cannot see a missing include; it only fails when the line runs.
+    $helpers = [
+        'variable_pricing.php' => '/\b(effective_subscription_price|save_subscription_with_price_history|load_price_history_index|subscription_has_variable_price|price_history_for_subscription|subscription_price_month|parse_price_history_json|variable_pricing_supports_cycle)\(/',
+        'paid_status.php' => '/\bisPaidThisCycle\(/',
+    ];
+    // These run inside a page that has already loaded the helper.
+    $loadedByCaller = ['index.php', 'includes/stats_extra_calculations.php', 'includes/list_subscriptions.php', 'includes/upcoming_payments.php', 'includes/upcoming_cancellations.php', 'includes/budget_period_calculations.php', 'includes/stats_calculations.php'];
+
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(WALLOS_ROOT . '/endpoints'));
+    $paths = ['calendar.php', 'subscriptions.php'];
+    foreach ($files as $file) {
+        if (substr($file->getFilename(), -4) === '.php') {
+            $paths[] = substr(str_replace('\\', '/', $file->getPathname()), strlen(str_replace('\\', '/', WALLOS_ROOT)) + 1);
+        }
+    }
+    foreach (glob(WALLOS_ROOT . '/api/subscriptions/*.php') as $file) {
+        $paths[] = 'api/subscriptions/' . basename($file);
+    }
+
+    foreach ($paths as $path) {
+        $source = income_source($path);
+        foreach ($helpers as $include => $pattern) {
+            if (!in_array($path, $loadedByCaller, true) && preg_match($pattern, $source)) {
+                $loaded = strpos($source, $include) !== false || strpos($source, 'list_subscriptions.php') !== false;
+                assert_true($loaded, "$path loads $include");
+            }
+        }
+    }
+});
+
+wallos_test('calendar entries show the amount of the month they are in', function () {
+    assert_contains("\$subscription['price'] = effective_subscription_price(\$subscription, \$monthKey, \$priceHistoryIndex);", income_source('calendar.php'), 'the entry and the totals use one amount');
 });
 
 wallos_test('the income strings exist in the source language', function () {
