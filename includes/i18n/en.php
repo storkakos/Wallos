@@ -556,6 +556,19 @@ $i18n = [
     "yearly_income" => "Yearly Income",
     "monthly_balance" => "Monthly Balance",
     "yearly_balance" => "Yearly Balance",
+    "set_type" => "Set type",
+    "add_income" => "Add income",
+    "edit_income" => "Edit income",
+    "income_name" => "Income name",
+    "amount" => "Amount",
+    "received_every" => "Received every",
+    "next_income_date" => "Next Income Date",
+    "income_date" => "Income Date",
+    "received_via" => "Received via",
+    "received_by" => "Received by",
+    "enable_income_notifications" => "Enable Notifications for this income",
+    "end_date_reminder" => "End Date Reminder",
+    "projected_balance" => "Projected Balance (Next 12 Months)",
 ];
 
 

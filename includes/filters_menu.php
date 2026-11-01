@@ -113,6 +113,14 @@
   ?>
 
   <div class="filtermenu-submenu">
+    <div class="filter-title" onClick="toggleSubMenu('type')"><?= translate("entry_type", $i18n) ?></div>
+    <div class="filtermenu-submenu-content" id="filter-type">
+      <div class="filter-item capitalize" data-entrytype="expense"><?= translate("expense", $i18n) ?></div>
+      <div class="filter-item capitalize" data-entrytype="income"><?= translate("income", $i18n) ?></div>
+    </div>
+  </div>
+
+  <div class="filtermenu-submenu">
     <div class="filter-title" onClick="toggleSubMenu('renewal_type')"><?= translate("renewal_type", $i18n) ?></div>
     <div class="filtermenu-submenu-content" id="filter-renewal_type">
       <div class="filter-item capitalize" data-renewaltype="1"><?= translate("auto_renewal", $i18n) ?></div>

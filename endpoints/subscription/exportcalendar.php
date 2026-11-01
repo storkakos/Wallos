@@ -35,7 +35,7 @@ if ($subscription) {
 
     // Create ICS from subscription information
     $uid = 'wallos-subscription-' . $subscription['id'] . '@wallos';
-    $summary = icalEscape(html_entity_decode($subscription['name'], ENT_QUOTES, 'UTF-8'));
+    $summary = icalEscape(($subscription['type'] === 'income' ? 'Income: ' : '') . html_entity_decode($subscription['name'], ENT_QUOTES, 'UTF-8'));
     $notes = icalEscape($subscription['notes']);
     $category = icalEscape($subscription['category']);
     $paymentMethod = icalEscape($subscription['payment_method']);

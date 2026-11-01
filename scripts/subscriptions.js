@@ -142,6 +142,26 @@ function initMultiSelects() {
   });
 }
 
+// Selecting income only changes the wording: the fields stay the same.
+function applyEntryTypeLabels() {
+  const isIncome = document.querySelector("#type").value === "income";
+  document.querySelectorAll("#subs-form [data-income-label]").forEach((element) => {
+    element.dataset.expenseLabel ??= element.textContent;
+    element.textContent = isIncome ? element.dataset.incomeLabel : element.dataset.expenseLabel;
+  });
+  document.querySelectorAll("#subs-form [data-income-placeholder]").forEach((element) => {
+    element.dataset.expensePlaceholder ??= element.placeholder;
+    element.placeholder = isIncome ? element.dataset.incomePlaceholder : element.dataset.expensePlaceholder;
+  });
+  const formTitle = document.querySelector("#form-title");
+  const isEdit = document.querySelector("#id").value !== "";
+  if (isIncome) {
+    formTitle.textContent = isEdit ? formTitle.dataset.editIncome : formTitle.dataset.addIncome;
+  } else {
+    formTitle.textContent = translate(isEdit ? 'edit_subscription' : 'add_subscription');
+  }
+}
+
 function resetForm() {
   const id = document.querySelector("#id");
   id.value = "";
@@ -179,6 +199,7 @@ function resetForm() {
   const deleteButton = document.querySelector("#deletesub");
   deleteButton.style = 'display: none';
   deleteButton.removeAttribute("onClick");
+  applyEntryTypeLabels();
 }
 
 // Picks the logo filename that reads well on the theme currently in use,
@@ -207,6 +228,7 @@ function fillEditFormFields(subscription) {
   id.value = subscription.id;
   const typeSelect = document.querySelector("#type");
   typeSelect.value = subscription.type;
+  applyEntryTypeLabels();
   const name = document.querySelector("#name");
   name.value = subscription.name;
   const price = document.querySelector("#price");
@@ -691,6 +713,9 @@ function fetchSubscriptions(id, event, initiator) {
   if (activeFilters['state'] !== "") {
     getSubscriptions += getSubscriptions.includes("?") ? `&state=${activeFilters['state']}` : `?state=${activeFilters['state']}`;
   }
+  if (activeFilters['type'] !== "") {
+    getSubscriptions += getSubscriptions.includes("?") ? `&type=${activeFilters['type']}` : `?type=${activeFilters['type']}`;
+  }
   if (activeFilters['renewalType'] !== "") {
     getSubscriptions += getSubscriptions.includes("?") ? `&renewalType=${activeFilters['renewalType']}` : `?renewalType=${activeFilters['renewalType']}`;
   }
@@ -1002,6 +1027,7 @@ activeFilters['members'] = [];
 activeFilters['payments'] = [];
 activeFilters['state'] = "";
 activeFilters['renewalType'] = "";
+activeFilters['type'] = "";
 activeFilters['notifications'] = [];
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1108,6 +1134,18 @@ document.querySelectorAll('.filter-item').forEach(function (item) {
         });
         this.classList.add('selected');
       }
+    } else if (this.hasAttribute('data-entrytype')) {
+      const entryType = this.getAttribute('data-entrytype');
+      if (activeFilters['type'] === entryType) {
+        activeFilters['type'] = "";
+        this.classList.remove('selected');
+      } else {
+        activeFilters['type'] = entryType;
+        Array.from(this.parentNode.children).forEach(sibling => {
+          sibling.classList.remove('selected');
+        });
+        this.classList.add('selected');
+      }
     } else if (this.hasAttribute('data-notificationtype')) {
       const notifType = this.getAttribute('data-notificationtype');
       if (activeFilters['notifications'].includes(notifType)) {
@@ -1122,7 +1160,7 @@ document.querySelectorAll('.filter-item').forEach(function (item) {
 
     if (activeFilters['categories'].length > 0 || activeFilters['members'].length > 0 ||
        activeFilters['payments'].length > 0 || activeFilters['state'] !== "" ||
-       activeFilters['renewalType'] !== "" || activeFilters['notifications'].length > 0) {
+       activeFilters['renewalType'] !== "" || activeFilters['type'] !== "" || activeFilters['notifications'].length > 0) {
       document.querySelector('#clear-filters').classList.remove('hide');
     } else {
       document.querySelector('#clear-filters').classList.add('hide');
@@ -1140,6 +1178,7 @@ function clearFilters() {
   activeFilters['payments'] = [];
   activeFilters['state'] = "";
   activeFilters['renewalType'] = "";
+  activeFilters['type'] = "";
   activeFilters['notifications'] = [];
 
   document.querySelectorAll('.filter-item').forEach(function (item) {
@@ -1455,6 +1494,7 @@ function updateBulkActionValue() {
   document.querySelector("#bulk-notify-days").hidden = action !== "set_notify_days";
   document.querySelector("#bulk-category").hidden = action !== "set_category";
   document.querySelector("#bulk-payment-method").hidden = action !== "set_payment_method";
+  document.querySelector("#bulk-type").hidden = action !== "set_type";
   updateBulkApplyState();
 }
 
@@ -1481,7 +1521,10 @@ function applyBulkAction() {
     set_category: "#bulk-category",
     set_payment_method: "#bulk-payment-method",
   };
-  const value = values[action] ? parseInt(document.querySelector(values[action]).value) : null;
+  let value = values[action] ? parseInt(document.querySelector(values[action]).value) : null;
+  if (action === "set_type") {
+    value = document.querySelector("#bulk-type").value;
+  }
 
   fetch("endpoints/subscriptions/bulkedit.php", {
     method: "POST",

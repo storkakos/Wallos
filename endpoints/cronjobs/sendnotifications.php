@@ -391,12 +391,14 @@ while ($userToNotify = $usersToNotify->fetchArray(SQLITE3_ASSOC)) {
                 echo "Next payment date: " . $nextPaymentDate->format('Y-m-d') . "<br />";
                 echo "Current date: " . $currentDate->format('Y-m-d') . "<br />";
                 echo "Difference: " . $difference . "<br /><br />";
+                // The name carries the label, so every channel and payload gets it.
+                $isIncome = $rowSubscription['type'] === 'income';
                 $entry = [
-                    'name' => html_entity_decode($rowSubscription['name'], ENT_QUOTES, 'UTF-8'),
+                    'name' => ($isIncome ? 'Income: ' : '') . html_entity_decode($rowSubscription['name'], ENT_QUOTES, 'UTF-8'),
                     'price' => $rowSubscription['price'] . $currencies[$rowSubscription['currency_id']]['symbol'],
                     'currency' => $currencies[$rowSubscription['currency_id']]['name'],
                     'currency_symbol' => $currencies[$rowSubscription['currency_id']]['symbol'],
-                    'formatted_price' => formatPrice($rowSubscription['price'], $currencies[$rowSubscription['currency_id']]['code'], $currencies[$rowSubscription['currency_id']]['symbol']),
+                    'formatted_price' => ($isIncome ? '+' : '') . formatPrice($rowSubscription['price'], $currencies[$rowSubscription['currency_id']]['code'], $currencies[$rowSubscription['currency_id']]['symbol']),
                     'category' => payerNamesLabel(getCategoriesBySubscription($db, [$rowSubscription])[$rowSubscription['id']] ?? [], array_map(fn($category) => $category['name'], $categories)) ?: $categories[$rowSubscription['category_id']]['name'],
                     'payer' => payerNamesLabel($allPayerIds, array_map(fn($member) => $member['name'], $household)) ?: $household[$rowSubscription['payer_user_id']]['name'],
                     'date' => $rowSubscription['next_payment'],

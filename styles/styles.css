@@ -2705,6 +2705,18 @@ button.dark-theme-button i {
   overflow: hidden;
 }
 
+.statistics.two-columns .statistic {
+  flex-basis: calc(50% - 10px);
+}
+
+.statistic span.income {
+  color: var(--success-color);
+}
+
+.statistic span.negative {
+  color: var(--error-color);
+}
+
 .statistic.short {
   padding-bottom: 15px;
 }
@@ -2716,7 +2728,8 @@ button.dark-theme-button i {
 }
 
 @media (max-width: 768px) {
-  .statistic {
+  .statistic,
+  .statistics.two-columns .statistic {
     flex-basis: 100%;
   }
 
@@ -4577,6 +4590,10 @@ body.details-open {
 .details-price {
   font-size: 32px;
   font-weight: 700;
+}
+
+.details-price.income {
+  color: var(--success-color);
 }
 
 .details-cycle {

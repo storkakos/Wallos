@@ -138,6 +138,10 @@ function renderSubscriptionDetails(subscription) {
   const chips = document.querySelector('#details-chips');
   chips.innerHTML = "";
   const isOneTime = Number(subscription.cycle) === 5;
+  const isIncome = subscription.type === 'income';
+  if (isIncome) {
+    detailsAddChip(chips, strings.income, 'ok');
+  }
   if (subscription.inactive) {
     detailsAddChip(chips, strings.inactive, 'warn');
   }
@@ -149,7 +153,13 @@ function renderSubscriptionDetails(subscription) {
     detailsAddChip(chips, strings.manual_renewal, 'manual');
   }
 
-  document.querySelector('#details-price').textContent = detailsFormatPrice(subscription.price, subscription.currency_id);
+  const detailsPrice = document.querySelector('#details-price');
+  detailsPrice.textContent = (isIncome ? '+' : '') + detailsFormatPrice(subscription.price, subscription.currency_id);
+  detailsPrice.classList.toggle('income', isIncome);
+  document.querySelectorAll('#subscription-details [data-income-label]').forEach((element) => {
+    element.dataset.expenseLabel ??= element.textContent;
+    element.textContent = isIncome ? element.dataset.incomeLabel : element.dataset.expenseLabel;
+  });
   document.querySelector('#details-billing-cycle').textContent = isOneTime ? "" : detailsBillingCycleText(subscription.cycle, subscription.frequency);
 
   const progressTrack = document.querySelector('#details-progress-track');

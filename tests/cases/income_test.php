@@ -119,7 +119,7 @@ wallos_test('both places that build the list pass the type on, and the list mark
 });
 
 wallos_test('the form offers the type and the script keeps it in step', function () {
-    assert_contains('<select id="type" name="type">', income_source('subscriptions.php'), 'the selector exists');
+    assert_contains('<select id="type" name="type"', income_source('subscriptions.php'), 'the selector exists');
     $script = income_source('scripts/subscriptions.js');
     assert_contains('typeSelect.value = "expense";', $script, 'resetForm() goes back to expense');
     assert_contains('typeSelect.value = subscription.type;', $script, 'fillEditFormFields() loads the stored type');
@@ -186,6 +186,66 @@ wallos_test('upcoming payments carry the type of each row', function () {
 
     assert_same('income', $rows[0]['type'], 'the dashboard can tell income apart');
     $db->close();
+});
+
+wallos_test('the statistics project the balance and colour it', function () {
+    $extra = income_source('includes/stats_extra_calculations.php');
+    assert_contains("\$addToProjection(\$subscription, \$cycle, \$frequency, \$convertedPrice, 'income');", $extra, 'income feeds the projection');
+    assert_contains("\$addToProjection(\$subscription, \$cycle, \$frequency, \$convertedPrice, 'total');", $extra, 'costs still do');
+    assert_contains("round(\$bucket['income'] - \$bucket['total'], 2)", $extra, 'the balance is income minus cost');
+
+    $stats = income_source('stats.php');
+    assert_contains('loadBarGraph("projectedBalanceChart"', $stats, 'the chart is drawn');
+    assert_contains("\$balancePerMonth < 0 ? 'negative' : 'income'", $stats, 'a negative balance is marked');
+    assert_contains('statistics two-columns', $stats, 'the tiles stay together');
+});
+
+wallos_test('the form rewords itself for income', function () {
+    $form = income_source('subscriptions.php');
+    assert_same(7, substr_count($form, 'data-income-label='), 'every expense-worded label has an income one');
+    assert_same(2, substr_count($form, 'data-income-placeholder='), 'and so do the placeholders');
+    assert_contains('onchange="applyEntryTypeLabels()"', $form, 'switching the type rewords the form');
+
+    $script = str_replace("\r\n", "\n", income_source('scripts/subscriptions.js'));
+    assert_contains("typeSelect.value = subscription.type;\n  applyEntryTypeLabels();", $script, 'the edit form rewords itself after loading the type');
+});
+
+wallos_test('the list can be filtered and sorted by type', function () {
+    $endpoint = income_source('endpoints/subscriptions/get.php');
+    assert_contains("in_array(\$_GET['type'], ['income', 'expense'], true)", $endpoint, 'the filter value is whitelisted');
+    assert_contains('data-entrytype="income"', income_source('includes/filters_menu.php'), 'the filter is offered');
+    assert_contains("'renewal_type', 'type'];", $endpoint, 'the refreshed list can sort by type');
+    assert_contains("'renewal_type', 'type'];", income_source('subscriptions.php'), 'the first page load too');
+});
+
+wallos_test('a bulk action sets the type and only accepts income or expense', function () {
+    $bulk = income_source('endpoints/subscriptions/bulkedit.php');
+    assert_contains("'set_type' => \"type = :type\"", $bulk, 'the action exists');
+    assert_contains("\$type = (\$data['value'] ?? '') === 'income' ? 'income' : 'expense';", $bulk, 'the value is whitelisted');
+    assert_contains('value = document.querySelector("#bulk-type").value;', income_source('scripts/subscriptions.js'), 'the script sends the text value');
+});
+
+wallos_test('the details popup marks income', function () {
+    $script = income_source('scripts/subscription-details.js');
+    assert_contains("detailsAddChip(chips, strings.income, 'ok');", $script, 'income chip');
+    assert_contains("(isIncome ? '+' : '')", $script, 'plus sign');
+});
+
+wallos_test('notifications and calendar exports label income', function () {
+    assert_contains("(\$isIncome ? 'Income: ' : '')", income_source('endpoints/cronjobs/sendnotifications.php'), 'payment reminders');
+    assert_contains("(\$isIncome ? '+' : '') . formatPrice(", income_source('endpoints/cronjobs/sendnotifications.php'), 'payment reminder amounts');
+    assert_contains("(\$rowSubscription['type'] === 'income' ? 'Income: ' : '')", income_source('endpoints/cronjobs/sendcancellationnotifications.php'), 'cancellation reminders');
+
+    foreach (['api/subscriptions/get_ical_feed.php', 'endpoints/subscription/exportcalendar.php'] as $path) {
+        assert_contains("(\$subscription['type'] === 'income' ? 'Income: ' : '')", income_source($path), $path);
+    }
+});
+
+wallos_test('the projection counts payments due on the first of the month', function () {
+    $start = new DateTime('first day of next month midnight');
+
+    assert_same('00:00:00', $start->format('H:i:s'), 'the first bucket starts at midnight');
+    assert_contains("new DateTime('first day of next month midnight')", income_source('includes/stats_extra_calculations.php'), 'the statistics use it');
 });
 
 wallos_test('the income strings exist in the source language', function () {

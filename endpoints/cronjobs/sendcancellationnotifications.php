@@ -198,8 +198,9 @@ while ($userToNotify = $usersToNotify->fetchArray(SQLITE3_ASSOC)) {
         $currentDate = new DateTime('now');
         while ($rowSubscription = $resultSubscriptions->fetchArray(SQLITE3_ASSOC)) {
             $allPayerIds = getPayersBySubscription($db, [$rowSubscription])[$rowSubscription['id']] ?? [];
+            // The name carries the label, so every channel and payload gets it.
             $entry = [
-                'name' => $rowSubscription['name'],
+                'name' => ($rowSubscription['type'] === 'income' ? 'Income: ' : '') . $rowSubscription['name'],
                 'price' => $rowSubscription['price'] . $currencies[$rowSubscription['currency_id']]['symbol'],
                 'currency' => $currencies[$rowSubscription['currency_id']]['name'],
                 'category' => payerNamesLabel(getCategoriesBySubscription($db, [$rowSubscription])[$rowSubscription['id']] ?? [], array_map(fn($category) => $category['name'], $categories)) ?: $categories[$rowSubscription['category_id']]['name'],

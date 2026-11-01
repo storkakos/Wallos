@@ -27,6 +27,9 @@
             <?php
         }
         ?>
+        <li <?= $sortOrder == "type" ? 'class="selected"' : "" ?> onClick="setSortOption('type')" id="sort-type">
+            <?= translate('entry_type', $i18n) ?>
+        </li>
         <li <?= $sortOrder == "alphanumeric" ? 'class="selected"' : "" ?> onClick="setSortOption('alphanumeric')"
             id="sort-alphanumeric"><?= translate('alphanumeric', $i18n) ?></li>
         <li <?= $sortOrder == "renewal_type" ? 'class="selected"' : "" ?> onClick="setSortOption('renewal_type')"
