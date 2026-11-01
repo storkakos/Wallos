@@ -184,12 +184,12 @@ services:
       test: ["NONE"]
 ```
 
-## Testing the income/expense branch
+## Running this fork with income and expenses
 
-Recurring items can be marked as income. To try it on a Docker host, build the image from this branch:
+Recurring items can be marked as income. To run it on a Docker host, build the image from this repository:
 
 ```
-git fetch && git checkout feature/income-expense-type && docker compose up -d --build
+git pull && docker compose up -d --build
 ```
 
 > [!WARNING]
