@@ -193,6 +193,9 @@ function renderSubscriptionDetails(subscription) {
   if (!isOneTime && !subscription.inactive && subscription.paid_this_cycle) {
     detailsAddChip(chips, isIncome ? strings.received : strings.paid, 'ok');
   }
+  if (Number(subscription.has_variable_price) === 1) {
+    detailsAddChip(chips, isIncome ? strings.variable_income : strings.variable_price, 'muted');
+  }
   if (isOneTime) {
     detailsAddChip(chips, strings.one_time, 'muted');
   } else if (Number(subscription.auto_renew) === 1) {
@@ -202,7 +205,7 @@ function renderSubscriptionDetails(subscription) {
   }
 
   const detailsPrice = document.querySelector('#details-price');
-  detailsPrice.textContent = (isIncome ? '+' : '-') + detailsFormatPrice(subscription.price, subscription.currency_id);
+  detailsPrice.textContent = (isIncome ? '+' : '-') + detailsFormatPrice(subscription.effective_price ?? subscription.price, subscription.currency_id);
   detailsPrice.classList.toggle('income', isIncome);
   detailsPrice.classList.toggle('expense', !isIncome);
   document.querySelectorAll('#subscription-details [data-income-label]').forEach((element) => {

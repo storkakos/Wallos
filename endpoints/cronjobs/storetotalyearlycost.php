@@ -2,6 +2,7 @@
 require_once 'validate.php';
 require_once __DIR__ . '/../../includes/connect_endpoint_crontabs.php';
 require_once __DIR__ . '/../../includes/currency_rates.php';
+require_once __DIR__ . '/../../includes/variable_pricing.php';
 
 require 'settimezone.php';
 
@@ -46,6 +47,8 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $userId = $row['id'];
     $userCurrencyId = $row['main_currency'];
     $totalYearlyCost = 0;
+    $priceHistoryIndex = load_price_history_index($db, (int) $userId);
+    $currentYearMonth = date('Y-m');
 
     $query = "SELECT * FROM subscriptions WHERE user_id = :userId AND inactive = 0 AND type = 'expense'";
     $stmt = $db->prepare($query);
@@ -53,7 +56,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $resultSubscriptions = $stmt->execute();
 
     while ($rowSubscriptions = $resultSubscriptions->fetchArray(SQLITE3_ASSOC)) {
-        $originalSubscriptionPrice = getPriceConverted($rowSubscriptions['price'], $rowSubscriptions['currency_id'], $db, $userId);
+        $originalSubscriptionPrice = getPriceConverted(effective_subscription_price($rowSubscriptions, $currentYearMonth, $priceHistoryIndex), $rowSubscriptions['currency_id'], $db, $userId);
         $price = getPricePerMonth($rowSubscriptions['cycle'], $rowSubscriptions['frequency'], $originalSubscriptionPrice) * 12;
         $totalYearlyCost += $price;
     }

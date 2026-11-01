@@ -89,7 +89,7 @@ $upcomingIncome = get_upcoming_payments(
 );
 
 // Fetch enabled subscriptions with manual renewal that are overdue
-$stmt = $db->prepare("SELECT id, logo, logo_text_color, logo_variant, name, price, currency_id, next_payment, inactive, auto_renew, type, cycle, frequency, paid_at FROM subscriptions WHERE user_id = :userId AND next_payment < date('now') AND auto_renew = 0 AND inactive = 0 AND cycle != 5 ORDER BY next_payment ASC");
+$stmt = $db->prepare("SELECT id, logo, logo_text_color, logo_variant, name, price, currency_id, next_payment, inactive, auto_renew, type, cycle, frequency, paid_at, has_variable_price FROM subscriptions WHERE user_id = :userId AND next_payment < date('now') AND auto_renew = 0 AND inactive = 0 AND cycle != 5 ORDER BY next_payment ASC");
 $stmt->bindValue(':userId', $userId, SQLITE3_INTEGER);
 $result = $stmt->execute();
 $overdueSubscriptions = [];
@@ -179,7 +179,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 
                     foreach ($overdueGroup as $subscription) {
                         $subscriptionName = htmlspecialchars($subscription['name']);
-                        $subscriptionPrice = $subscription['price'];
+                        $subscriptionPrice = effective_subscription_price($subscription, subscription_price_month($subscription), $priceHistoryIndex);
                         $subscriptionCurrency = $subscription['currency_id'];
                         $subscriptionNextPayment = $subscription['next_payment'];
                         $subscriptionDisplayNextPayment = formatDate($subscriptionNextPayment, $lang);
@@ -227,7 +227,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
                 } else {
                     foreach ($upcomingSubscriptions as $subscription) {
                         $subscriptionName = htmlspecialchars($subscription['name']);
-                        $subscriptionPrice = $subscription['price'];
+                        $subscriptionPrice = effective_subscription_price($subscription, subscription_price_month($subscription), $priceHistoryIndex);
                         $subscriptionCurrency = $subscription['currency_id'];
                         $subscriptionNextPayment = $subscription['next_payment'];
                         $subscriptionDisplayNextPayment = formatDate($subscriptionNextPayment, $lang);
@@ -282,7 +282,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
                                 ?>
                                 <div class="subscription-item-info">
                                     <p class="subscription-item-date"> <?= formatDate($subscription['next_payment'], $lang) ?></p>
-                                    <p class="subscription-item-price income"> <?= '+' . formatPrice($subscription['price'], $currencies[$subscription['currency_id']]['code'], $currencies) ?></p>
+                                    <p class="subscription-item-price income"> <?= '+' . formatPrice(effective_subscription_price($subscription, subscription_price_month($subscription), $priceHistoryIndex), $currencies[$subscription['currency_id']]['code'], $currencies) ?></p>
                                 </div>
                             </div>
                             <?php
@@ -301,7 +301,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
                         <?php
                         foreach ($upcomingCancellations as $subscription) {
                             $subscriptionName = htmlspecialchars($subscription['name']);
-                            $subscriptionPrice = $subscription['price'];
+                            $subscriptionPrice = effective_subscription_price($subscription, subscription_price_month($subscription), $priceHistoryIndex);
                             $subscriptionCurrency = $subscription['currency_id'];
                             $subscriptionDisplayCancellationDate = formatDate($subscription['cancellation_date'], $lang);
                             $isIncome = $subscription['type'] === 'income';

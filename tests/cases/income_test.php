@@ -129,7 +129,7 @@ wallos_test('the form offers the type and the script keeps it in step', function
 
 wallos_test('the statistics keep income out of costs and work out the balance', function () {
     $stats = income_source('includes/stats_calculations.php');
-    assert_contains('auto_renew, type FROM subscriptions', $stats, 'the query selects the type');
+    assert_contains('auto_renew, type, has_variable_price FROM subscriptions', $stats, 'the query selects the type');
     assert_contains('$totalIncomePerMonth += $price;', $stats, 'income is summed separately');
     assert_contains('$balancePerMonth = $totalIncomePerMonth - $totalCostPerMonth;', $stats, 'monthly balance');
     assert_contains('$balancePerYear = $balancePerMonth * 12;', $stats, 'yearly balance');
@@ -221,7 +221,7 @@ wallos_test('the statistics project the balance and colour it', function () {
 
 wallos_test('the form rewords itself for income', function () {
     $form = income_source('subscriptions.php');
-    assert_same(10, substr_count($form, 'data-income-label='), 'every expense-worded label has an income one');
+    assert_same(11, substr_count($form, 'data-income-label='), 'every expense-worded label has an income one');
     assert_same(2, substr_count($form, 'data-income-placeholder='), 'and so do the placeholders');
     assert_contains('onchange="applyEntryTypeLabels()"', $form, 'switching the type rewords the form');
 
@@ -372,6 +372,30 @@ wallos_test('the paid actions work everywhere the popup opens and fit income', f
     assert_contains("\$isIncome ? 'mark_received' : 'mark_as_paid'", income_source('includes/list_subscriptions.php'), 'income is received, not paid');
     assert_contains("!(\$isIncome && \$subscription['auto_renew'] != 1)", income_source('includes/list_subscriptions.php'), 'manual income keeps one action');
     assert_contains("in_array(\$_GET['paidStatus'], ['paid', 'unpaid'], true)", income_source('endpoints/subscriptions/get.php'), 'the filter value is whitelisted');
+});
+
+wallos_test('a variable amount reaches the budget for income and expenses alike', function () {
+    $db = wallos_test_open_database();
+    wallos_test_create_user($db, 1, 'alice');
+    $gasId = income_insert($db, 'Gas', 100, 'expense');
+    income_insert($db, 'Salary', 3000, 'income');
+    $month = (new DateTime('tomorrow'))->format('Y-m');
+    $db->exec("UPDATE subscriptions SET has_variable_price = 1 WHERE id = $gasId");
+    $db->exec("INSERT INTO subscription_price_history (subscription_id, period, price) VALUES ($gasId, '$month', 140)");
+
+    $rows = [];
+    $result = $db->query('SELECT * FROM subscriptions');
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        $rows[] = $row;
+    }
+
+    assert_equals(140.0, computeAmountNeededInPeriod($rows, new DateTime('today'), new DateTime('+20 days'), $db, 1), 'the month\'s amount replaces the base price, and income stays out');
+    assert_same(140.0, effective_subscription_price($rows[0], $month, load_price_history_index($db, 1)), 'the helper agrees');
+    $db->close();
+});
+
+wallos_test('calendar entries show the amount of the month they are in', function () {
+    assert_contains("\$subscription['price'] = effective_subscription_price(\$subscription, \$monthKey, \$priceHistoryIndex);", income_source('calendar.php'), 'the entry and the totals use one amount');
 });
 
 wallos_test('the income strings exist in the source language', function () {

@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/variable_pricing.php';
+
 /**
  * Fetch the subscriptions whose cancellation reminder is still ahead of us.
  *
@@ -13,7 +15,7 @@
  */
 function get_upcoming_cancellations($db, $userId)
 {
-    $stmt = $db->prepare("SELECT id, logo, logo_text_color, logo_variant, name, price, currency_id, cycle, frequency, cancellation_date, type
+    $stmt = $db->prepare("SELECT id, logo, logo_text_color, logo_variant, name, price, currency_id, cycle, frequency, cancellation_date, type, has_variable_price
         FROM subscriptions
         WHERE user_id = :userId
           AND inactive = 0
@@ -48,13 +50,15 @@ function get_upcoming_cancellations($db, $userId)
 function get_upcoming_cancellations_monthly_value($cancellations, $db, $userId)
 {
     $total = 0;
+    $historyIndex = load_price_history_index($db, (int) $userId);
 
     foreach ($cancellations as $subscription) {
         if (($subscription['type'] ?? 'expense') === 'income') {
             continue;
         }
 
-        $perMonth = getPricePerMonth($subscription['cycle'], $subscription['frequency'], $subscription['price']);
+        $price = effective_subscription_price($subscription, date('Y-m'), $historyIndex);
+        $perMonth = getPricePerMonth($subscription['cycle'], $subscription['frequency'], $price);
         $total += getPriceConverted($perMonth, $subscription['currency_id'], $db, $userId);
     }
 
