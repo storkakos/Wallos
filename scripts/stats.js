@@ -332,6 +332,9 @@ document.querySelectorAll('.filter-item').forEach(function(item) {
         const idx = current.indexOf(paymentId);
         if (idx !== -1) { current.splice(idx, 1); } else { current.push(paymentId); }
         current.length ? urlParams.set('payment', current.join(',')) : urlParams.delete('payment');
+    } else if (this.hasAttribute('data-entrytype')) {
+        const entryType = this.getAttribute('data-entrytype');
+        urlParams.get('type') === entryType ? urlParams.delete('type') : urlParams.set('type', entryType);
     }
 
     newUrl += urlParams.toString();

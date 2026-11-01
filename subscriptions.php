@@ -374,7 +374,8 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
 <section class="subscription-form" id="subscription-form">
   <header>
     <h3 id="form-title" data-add-income="<?= translate('add_income', $i18n) ?>"
-      data-edit-income="<?= translate('edit_income', $i18n) ?>"><?= translate('add_subscription', $i18n) ?></h3>
+      data-edit-income="<?= translate('edit_income', $i18n) ?>"
+      data-confirm-delete-income="<?= translate('confirm_delete_income', $i18n) ?>"><?= translate('add_subscription', $i18n) ?></h3>
     <span class="fa-solid fa-xmark close-form" onClick="closeAddSubscription()"></span>
   </header>
   <form action="endpoints/subscription/add.php" method="post" id="subs-form">
@@ -473,10 +474,10 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
           </div>
         </div>
         <div class="split33" id="auto-renew-group">
-          <label><?= translate('auto_renewal', $i18n) ?></label>
+          <label data-income-label="<?= translate('repeats', $i18n) ?>"><?= translate('auto_renewal', $i18n) ?></label>
           <div class="inline height50">
             <input type="checkbox" id="auto_renew" name="auto_renew" checked>
-            <label for="auto_renew"><?= translate('automatically_renews', $i18n) ?></label>
+            <label for="auto_renew" data-income-label="<?= translate('repeats_automatically', $i18n) ?>"><?= translate('automatically_renews', $i18n) ?></label>
           </div>
         </div>
       </div>
@@ -635,7 +636,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
     <div class="form-group">
       <div class="inline grow">
         <input type="checkbox" id="inactive" name="inactive" onchange="toggleReplacementSub()">
-        <label for="inactive" class="grow"><?= translate('inactive', $i18n) ?></label>
+        <label for="inactive" class="grow" data-income-label="<?= translate('disable_income', $i18n) ?>"><?= translate('inactive', $i18n) ?></label>
       </div>
     </div>
 
@@ -652,7 +653,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
         <option value="0"><?= translate('none', $i18n) ?></option>
         <?php
         foreach ($orderedSubscriptions as $sub) {
-          if ($sub['inactive'] == 0) {
+          if ($sub['inactive'] == 0 && $sub['type'] !== 'income') {
             ?>
             <option value="<?= htmlspecialchars($sub['id']) ?>"><?= htmlspecialchars($sub['name']) ?>
             </option>

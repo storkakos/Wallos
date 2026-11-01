@@ -64,6 +64,7 @@ $currencySpend = [];
 $paymentMethodCost = [];
 $lifetimeSpends = [];
 $totalLifetimeSpend = 0;
+$totalLifetimeIncome = 0;
 $oldestSubscription = null;
 $subscriptionAges = [];
 $newSubscriptionsPerYear = [];
@@ -80,6 +81,10 @@ if (isset($subscriptions)) {
         if ($subscription['type'] === 'income') {
             if (!$subscription['inactive'] && $cycle !== 5) {
                 $addToProjection($subscription, $cycle, $frequency, $convertedPrice, 'income');
+                $incomeStart = !empty($subscription['start_date']) ? strtotime($subscription['start_date']) : false;
+                if ($incomeStart !== false && $incomeStart <= $now->getTimestamp()) {
+                    $totalLifetimeIncome += $monthlyPrice * ((new DateTime())->setTimestamp($incomeStart)->diff($now)->days / 30.44);
+                }
             }
             continue;
         }

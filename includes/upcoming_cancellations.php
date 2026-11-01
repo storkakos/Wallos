@@ -21,6 +21,7 @@ function get_upcoming_cancellations($db, $userId)
           AND cancellation_date != ''
           AND cancellation_date >= date('now')
           AND cycle != 5
+          AND type = 'expense'
         ORDER BY cancellation_date ASC");
     $stmt->bindValue(':userId', $userId, SQLITE3_INTEGER);
     $result = $stmt->execute();

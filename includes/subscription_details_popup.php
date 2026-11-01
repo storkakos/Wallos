@@ -68,7 +68,7 @@ require_once __DIR__ . '/getdbkeys.php';
       <dd id="details-notifications"></dd>
     </div>
     <div class="details-item hide" id="details-cancellation-item">
-      <dt><?= translate('cancellation_notification', $i18n) ?></dt>
+      <dt data-income-label="<?= translate('end_date_reminder', $i18n) ?>"><?= translate('cancellation_notification', $i18n) ?></dt>
       <dd id="details-cancellation"></dd>
     </div>
     <div class="details-item hide" id="details-replacement-item">

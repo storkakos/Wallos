@@ -7,6 +7,8 @@
 require_once WALLOS_ROOT . '/includes/budget_period_calculations.php';
 require_once WALLOS_ROOT . '/includes/currency_rates.php';
 require_once WALLOS_ROOT . '/includes/upcoming_payments.php';
+require_once WALLOS_ROOT . '/includes/upcoming_cancellations.php';
+require_once __DIR__ . '/price_sort_test.php';
 
 /**
  * Inserts a monthly item due tomorrow; omits type when it is null, so the
@@ -143,7 +145,6 @@ wallos_test('the statistics keep income out of costs and work out the balance', 
 
 wallos_test('every other cost output excludes income', function () {
     foreach ([
-        'api/subscriptions/get_monthly_cost.php',
         'api/subscriptions/get_period_budget.php',
         'endpoints/cronjobs/storetotalyearlycost.php',
         'endpoints/cronjobs/sendnotifications.php',
@@ -215,12 +216,12 @@ wallos_test('the statistics project the balance and colour it', function () {
     assert_contains("\$balancePerMonth < 0 ? 'negative' : 'income'", $stats, 'a negative balance is marked');
     assert_contains('"projectedBalanceChart"', $stats, 'the balance chart is present');
     assert_contains('null, "balance");', $stats, 'and colours by sign');
-    assert_contains("['yearly_expenses', 0 - \$totalCostPerYear, 'expense']", $stats, 'expenses have their own tile, shown as negative');
+    assert_contains("['yearly_expenses', 0 - \$totalCostPerYear, \$totalCostPerYear > 0 ? 'expense' : '']", $stats, 'expenses have their own tile, shown as negative');
 });
 
 wallos_test('the form rewords itself for income', function () {
     $form = income_source('subscriptions.php');
-    assert_same(7, substr_count($form, 'data-income-label='), 'every expense-worded label has an income one');
+    assert_same(10, substr_count($form, 'data-income-label='), 'every expense-worded label has an income one');
     assert_same(2, substr_count($form, 'data-income-placeholder='), 'and so do the placeholders');
     assert_contains('onchange="applyEntryTypeLabels()"', $form, 'switching the type rewords the form');
 
@@ -264,6 +265,78 @@ wallos_test('the projection counts payments due on the first of the month', func
 
     assert_same('00:00:00', $start->format('H:i:s'), 'the first bucket starts at midnight');
     assert_contains("new DateTime('first day of next month midnight')", income_source('includes/stats_extra_calculations.php'), 'the statistics use it');
+});
+
+wallos_test('income stays out of cancellations and replacements', function () {
+    $db = wallos_test_open_database();
+    wallos_test_create_user($db, 1, 'alice');
+    $incomeId = income_insert($db, 'Ending job', 2000, 'income');
+    $expenseId = income_insert($db, 'Old gym', 30, 'expense');
+    $date = (new DateTime('+10 days'))->format('Y-m-d');
+    $db->exec("UPDATE subscriptions SET cancellation_date = '$date' WHERE id IN ($incomeId, $expenseId)");
+
+    assert_same(['Old gym'], array_column(get_upcoming_cancellations($db, 1), 'name'), 'only the expense is a cancellation');
+    assert_contains("\$sub['type'] !== 'income'", income_source('subscriptions.php'), 'income cannot replace an expense');
+    $db->close();
+});
+
+wallos_test('sorting by price keeps income after the expenses', function () {
+    $rows = [
+        ['name' => 'Salary', 'type' => 'income', 'sort_price' => 3000],
+        ['name' => 'Netflix', 'type' => 'expense', 'sort_price' => 12],
+        ['name' => 'Rent', 'type' => 'expense', 'sort_price' => 800],
+        ['name' => 'Side job', 'type' => 'income', 'sort_price' => 50],
+    ];
+
+    price_sort_load_helpers();
+    sortSubscriptionsByPrice($rows, false);
+
+    assert_same(['Rent', 'Netflix', 'Salary', 'Side job'], array_column($rows, 'name'), 'each type is ranked on its own');
+});
+
+wallos_test('income has its own overdue, one-time and action wording', function () {
+    $dashboard = income_source('index.php');
+    assert_contains("'income_not_received' => array_filter(", $dashboard, 'overdue income has its own heading');
+    assert_contains('foreach ($overdueGroup as $subscription) {', $dashboard, 'each group lists its own entries');
+
+    $list = income_source('includes/list_subscriptions.php');
+    assert_contains("\$isIncome ? 'one_time_income' : 'lifetime_purchases'", $list, 'one-time income is not a purchase');
+    assert_contains("\$isIncome ? 'mark_received' : 'renew'", $list, 'income is received, not renewed');
+    assert_contains('dataset.confirmDeleteIncome', income_source('scripts/subscriptions.js'), 'the delete question says income');
+});
+
+wallos_test('the statistics filter by type, count income and estimate all-time income', function () {
+    $stats = income_source('includes/stats_calculations.php');
+    assert_contains("\$filteredType === 'income' || \$filteredType === 'expense'", $stats, 'the filter value is whitelisted before it reaches the query');
+    assert_contains('$activeIncome++;', $stats, 'active income is counted');
+    assert_contains('if (count($conditions) > 1) {', $stats, 'the account-wide cost history is hidden while filtering');
+    assert_contains('data-entrytype="<?= $entryType ?>"', income_source('stats.php'), 'the filter is offered');
+    assert_contains("hasAttribute('data-entrytype')", income_source('scripts/stats.js'), 'the script applies it');
+    assert_contains('$totalLifetimeIncome += $monthlyPrice', income_source('includes/stats_extra_calculations.php'), 'all-time income is estimated');
+});
+
+wallos_test('every income string is translated into German', function () {
+    $i18n = [];
+    include WALLOS_ROOT . '/includes/i18n/en.php';
+    $english = $i18n;
+    $i18n = [];
+    include WALLOS_ROOT . '/includes/i18n/de.php';
+
+    $source = str_replace("\r\n", "\n", file_get_contents(WALLOS_ROOT . '/includes/i18n/en.php'));
+    preg_match('/\/\/ Income and expenses\n(.*?)\n\];/s', $source, $block);
+    preg_match_all('/"([a-z_]+)" =>/', $block[1], $keys);
+
+    assert_true(count($keys[1]) > 30, 'the income block was found');
+    foreach ($keys[1] as $key) {
+        assert_true(isset($i18n[$key]), "de.php has $key");
+    }
+});
+
+wallos_test('the monthly API keeps cost and income apart', function () {
+    $api = income_source('api/subscriptions/get_monthly_cost.php');
+    assert_contains("if (\$subscription['type'] === 'income') {", $api, 'income is summed on its own');
+    assert_contains("'monthly_balance' => number_format(\$monthlyIncome - \$monthlyCost, 2)", $api, 'the balance is income minus cost');
+    assert_contains("NOT (type = 'income' AND cycle = 5)", $api, 'one-time income stays out, as in the statistics');
 });
 
 wallos_test('the income strings exist in the source language', function () {

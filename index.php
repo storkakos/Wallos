@@ -158,16 +158,24 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     <h1><?= translate('hello', $i18n) ?> <?= htmlspecialchars($first_name) ?></h1>
 
     <?php
-    // If there are overdue subscriptions, display them
-    if ($hasOverdueSubscriptions) {
+    // If there are overdue subscriptions, display them. Income that has not
+    // arrived yet is not a renewal, so it gets a heading of its own.
+    $overdueGroups = [
+        'overdue_renewals' => array_filter($overdueSubscriptions, fn($overdue) => $overdue['type'] !== 'income'),
+        'income_not_received' => array_filter($overdueSubscriptions, fn($overdue) => $overdue['type'] === 'income'),
+    ];
+    foreach ($overdueGroups as $overdueTitle => $overdueGroup) {
+        if (empty($overdueGroup)) {
+            continue;
+        }
         ?>
         <div class="overdue-subscriptions">
-            <h2><?= translate('overdue_renewals', $i18n) ?></h2>
+            <h2><?= translate($overdueTitle, $i18n) ?></h2>
             <div class="dashboard-subscriptions-container">
                 <div class="dashboard-subscriptions-list">
                     <?php
 
-                    foreach ($overdueSubscriptions as $subscription) {
+                    foreach ($overdueGroup as $subscription) {
                         $subscriptionName = htmlspecialchars($subscription['name']);
                         $subscriptionPrice = $subscription['price'];
                         $subscriptionCurrency = $subscription['currency_id'];
@@ -363,10 +371,10 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
                     <div class="dashboard-subscriptions-list">
                         <?php foreach ([
                 ['monthly_income', $totalIncomePerMonth, 'income'],
-                ['monthly_expenses', 0 - $totalCostPerMonth, 'expense'],
+                ['monthly_expenses', 0 - $totalCostPerMonth, $totalCostPerMonth > 0 ? 'expense' : ''],
                 ['monthly_balance', $balancePerMonth, $balancePerMonth < 0 ? 'negative' : 'income'],
                 ['yearly_income', $totalIncomePerYear, 'income'],
-                ['yearly_expenses', 0 - $totalCostPerYear, 'expense'],
+                ['yearly_expenses', 0 - $totalCostPerYear, $totalCostPerYear > 0 ? 'expense' : ''],
                 ['yearly_balance', $balancePerYear, $balancePerYear < 0 ? 'negative' : 'income'],
             ] as [$tileLabel, $tileValue, $tileClass]) { ?>
                             <div class="subscription-item thin">
@@ -508,6 +516,15 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
                             <p class="subscription-item-value"><?= $activeSubscriptions ?></p>
                         </div>
                     </div>
+
+                    <?php if ($activeIncome > 0) { ?>
+                        <div class="subscription-item thin">
+                            <p class="subscription-item-title"><?= translate('active_income', $i18n) ?></p>
+                            <div class="subscription-item-info">
+                                <p class="subscription-item-value"><?= $activeIncome ?></p>
+                            </div>
+                        </div>
+                    <?php } ?>
 
                     <?php if (isset($totalCostPerMonth) && $totalIncomePerMonth <= 0) { ?>
                         <div class="subscription-item thin">
