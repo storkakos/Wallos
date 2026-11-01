@@ -300,6 +300,22 @@ function rejectSubscriptionInput($message)
     exit();
 }
 
+// The renewal cron advances next_payment by "P{frequency}{unit}" in a loop
+// shared by every user, so a frequency of 0 never terminates and a negative
+// one throws. Hold both to what the form offers.
+if (!ctype_digit((string) $frequency) || (int) $frequency < 1 || (int) $frequency > 366) {
+    rejectSubscriptionInput('Invalid frequency.');
+}
+if (!ctype_digit((string) $cycle) || !in_array((int) $cycle, [1, 2, 3, 4, 5], true)) {
+    rejectSubscriptionInput('Invalid cycle.');
+}
+$frequency = (int) $frequency;
+$cycle = (int) $cycle;
+if ($cycle === 5) {
+    // A one-time payment has nothing to renew to; the form already disables this.
+    $autoRenew = false;
+}
+
 $currStmt = $db->prepare("SELECT id FROM currencies WHERE id = :id AND user_id = :userId");
 $currStmt->bindParam(':id', $currencyId, SQLITE3_INTEGER);
 $currStmt->bindParam(':userId', $userId, SQLITE3_INTEGER);

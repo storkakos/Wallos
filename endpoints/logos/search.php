@@ -1,4 +1,5 @@
 <?php
+require_once '../../includes/require_login.php';
 require_once '../../includes/ssrf_helper.php';
 
 if (isset($_GET['search'])) {

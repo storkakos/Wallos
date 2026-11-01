@@ -12,6 +12,13 @@ RUN apk upgrade --no-cache && \
     docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
     docker-php-ext-install -j$(nproc) gd intl zip
 
+# Upgrade again in a layer of its own so security fixes land on every build.
+# The layer above only reruns when its text or the base image changes, so the
+# build cache can otherwise ship packages that Alpine has since patched.
+# Pass a new APK_CACHE_BUST value to skip the cache here.
+ARG APK_CACHE_BUST
+RUN echo "apk cache bust: ${APK_CACHE_BUST}" && apk upgrade --no-cache
+
 # Copy your PHP application files into the container
 COPY . .
 

@@ -5,6 +5,7 @@
   so this endpoint just filters cached indexes — no scraping involved.
   Returns the same JSON shape as search.php: {"results": [{thumbnail, image, ...}]}.
 */
+require_once '../../includes/require_login.php';
 
 const ICON_SEARCH_CACHE_TTL = 86400; // one day
 const ICON_SEARCH_MAX_RESULTS = 24;
