@@ -92,6 +92,51 @@ function detailsAddChip(container, text, style) {
   container.appendChild(chip);
 }
 
+// Lives here rather than in subscriptions.js because the popup also opens on the
+// dashboard and the calendar, which do not load that script.
+function setPaidStatus(event, id, endpoint) {
+  event.stopPropagation();
+  event.preventDefault();
+
+  fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": window.csrfToken,
+    },
+    body: JSON.stringify({ id: id }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(translate("network_response_error"));
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (!data.success) {
+        showErrorMessage(data.message || translate("error"));
+        return;
+      }
+      if (typeof fetchSubscriptions === 'function') {
+        fetchSubscriptions(data.id, event, "mark_paid");
+        showSuccessMessage(decodeURI(data.message));
+      } else {
+        window.location.reload();
+      }
+    })
+    .catch((error) => {
+      showErrorMessage(error.message || translate("error"));
+    });
+}
+
+function markAsPaid(event, id) {
+  setPaidStatus(event, id, "endpoints/subscription/mark_paid.php");
+}
+
+function unmarkPaid(event, id) {
+  setPaidStatus(event, id, "endpoints/subscription/unmark_paid.php");
+}
+
 function renderSubscriptionDetails(subscription) {
   const lookups = window.subscriptionLookups;
   const strings = lookups.i18n;
@@ -144,6 +189,9 @@ function renderSubscriptionDetails(subscription) {
   }
   if (subscription.inactive) {
     detailsAddChip(chips, strings.inactive, 'warn');
+  }
+  if (!isOneTime && !subscription.inactive && subscription.paid_this_cycle) {
+    detailsAddChip(chips, isIncome ? strings.received : strings.paid, 'ok');
   }
   if (isOneTime) {
     detailsAddChip(chips, strings.one_time, 'muted');
@@ -237,6 +285,25 @@ function renderSubscriptionDetails(subscription) {
   } else {
     urlButton.classList.add('hide');
   }
+
+  // Manual income already has "Mark as received", which moves the date on.
+  const canTogglePaid = !isOneTime && !subscription.inactive && !(isIncome && Number(subscription.auto_renew) !== 1);
+  const markPaidButton = document.querySelector('#details-mark-paid-button');
+  const unmarkPaidButton = document.querySelector('#details-unmark-paid-button');
+  markPaidButton.classList.toggle('hide', !canTogglePaid || subscription.paid_this_cycle);
+  unmarkPaidButton.classList.toggle('hide', !canTogglePaid || !subscription.paid_this_cycle);
+  markPaidButton.title = isIncome ? strings.mark_received : strings.mark_as_paid;
+  unmarkPaidButton.title = isIncome ? strings.mark_not_received : strings.mark_as_unpaid;
+  markPaidButton.setAttribute('aria-label', markPaidButton.title);
+  unmarkPaidButton.setAttribute('aria-label', unmarkPaidButton.title);
+  markPaidButton.onclick = function (e) {
+    markAsPaid(e, subscription.id);
+    closeSubscriptionDetails();
+  };
+  unmarkPaidButton.onclick = function (e) {
+    unmarkPaid(e, subscription.id);
+    closeSubscriptionDetails();
+  };
 
   document.querySelector('#details-export-button').onclick = function () {
     exportCalendar(subscription.id);

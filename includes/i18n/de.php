@@ -548,6 +548,13 @@ $i18n = [
     "payment_method_money" => "Bargeld",
     // Einnahmen und Ausgaben
     "entry_type" => "Art",
+    "mark_as_paid" => "Als bezahlt markieren",
+    "mark_as_unpaid" => "Als unbezahlt markieren",
+    "paid" => "Bezahlt",
+    "unpaid" => "Unbezahlt",
+    "payment_status" => "Zahlungsstatus",
+    "received" => "Erhalten",
+    "mark_not_received" => "Als nicht erhalten markieren",
     "expense" => "Ausgabe",
     "income" => "Einnahme",
     "income_and_expenses" => "Einnahmen und Ausgaben",

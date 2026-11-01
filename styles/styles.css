@@ -853,6 +853,19 @@ body.light img.logo-theme-variant[data-native-theme="dark"] {
   overflow-wrap: break-word;
 }
 
+.subscription.paid {
+  border-left: 3px solid var(--success-color);
+}
+
+.subscription-main .actions>li.mark-paid:hover,
+.subscription-main .actions>li.mark-paid:hover>i {
+  color: var(--success-color);
+}
+
+button.mobile-action-paid {
+  background-color: #188823;
+}
+
 .subscription .price .value {
   color: var(--error-color);
 }

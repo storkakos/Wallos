@@ -164,8 +164,14 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
   $payersBySubscription = getPayersBySubscription($db, $subscriptions);
   $categoriesBySubscription = getCategoriesBySubscription($db, $subscriptions);
 
+  $paidStatusFilter = isset($_GET['paidStatus']) && in_array($_GET['paidStatus'], ['paid', 'unpaid'], true) ? $_GET['paidStatus'] : '';
+
   foreach ($subscriptions as $subscription) {
     if ($subscription['inactive'] == 1 && isset($settings['hideDisabledSubscriptions']) && $settings['hideDisabledSubscriptions'] === 'true') {
+      continue;
+    }
+    $paidThisCycle = isPaidThisCycle($subscription['paid_at'] ?? null, $subscription['cycle'], $subscription['frequency'], $subscription['next_payment']);
+    if (($paidStatusFilter === 'paid' && !$paidThisCycle) || ($paidStatusFilter === 'unpaid' && $paidThisCycle)) {
       continue;
     }
     $id = $subscription['id'];
@@ -202,6 +208,7 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
     $print[$id]['notes'] = $subscription['notes'] ?? "";
     $print[$id]['replacement_subscription_id'] = $subscription['replacement_subscription_id'];
     $print[$id]['type'] = $subscription['type'];
+    $print[$id]['paid_this_cycle'] = $paidThisCycle;
 
     if (isset($settings['convertCurrency']) && $settings['convertCurrency'] === 'true' && $currencyId != $mainCurrencyId) {
       $print[$id]['price'] = getPriceConverted($print[$id]['price'], $currencyId, $db);

@@ -312,6 +312,7 @@ $subscriptionsView = (isset($_COOKIE['subscriptionsView']) && $_COOKIE['subscrip
       $print[$id]['notes'] = $subscription['notes'];
       $print[$id]['replacement_subscription_id'] = $subscription['replacement_subscription_id'];
       $print[$id]['type'] = $subscription['type'];
+      $print[$id]['paid_this_cycle'] = isPaidThisCycle($subscription['paid_at'] ?? null, $subscription['cycle'], $subscription['frequency'], $subscription['next_payment']);
 
       if (isset($settings['convertCurrency']) && $settings['convertCurrency'] === 'true' && $currencyId != $mainCurrencyId) {
         $print[$id]['price'] = getPriceConverted($print[$id]['price'], $currencyId, $db);
