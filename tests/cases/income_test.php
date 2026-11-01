@@ -394,6 +394,37 @@ wallos_test('a variable amount reaches the budget for income and expenses alike'
     $db->close();
 });
 
+wallos_test('every file that uses the shared helpers loads them', function () {
+    // php -l cannot see a missing include; it only fails when the line runs.
+    $helpers = [
+        'variable_pricing.php' => '/\b(effective_subscription_price|save_subscription_with_price_history|load_price_history_index|subscription_has_variable_price|price_history_for_subscription|subscription_price_month|parse_price_history_json|variable_pricing_supports_cycle)\(/',
+        'paid_status.php' => '/\bisPaidThisCycle\(/',
+    ];
+    // These run inside a page that has already loaded the helper.
+    $loadedByCaller = ['index.php', 'includes/stats_extra_calculations.php', 'includes/list_subscriptions.php', 'includes/upcoming_payments.php', 'includes/upcoming_cancellations.php', 'includes/budget_period_calculations.php', 'includes/stats_calculations.php'];
+
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(WALLOS_ROOT . '/endpoints'));
+    $paths = ['calendar.php', 'subscriptions.php'];
+    foreach ($files as $file) {
+        if (substr($file->getFilename(), -4) === '.php') {
+            $paths[] = substr(str_replace('\\', '/', $file->getPathname()), strlen(str_replace('\\', '/', WALLOS_ROOT)) + 1);
+        }
+    }
+    foreach (glob(WALLOS_ROOT . '/api/subscriptions/*.php') as $file) {
+        $paths[] = 'api/subscriptions/' . basename($file);
+    }
+
+    foreach ($paths as $path) {
+        $source = income_source($path);
+        foreach ($helpers as $include => $pattern) {
+            if (!in_array($path, $loadedByCaller, true) && preg_match($pattern, $source)) {
+                $loaded = strpos($source, $include) !== false || strpos($source, 'list_subscriptions.php') !== false;
+                assert_true($loaded, "$path loads $include");
+            }
+        }
+    }
+});
+
 wallos_test('calendar entries show the amount of the month they are in', function () {
     assert_contains("\$subscription['price'] = effective_subscription_price(\$subscription, \$monthKey, \$priceHistoryIndex);", income_source('calendar.php'), 'the entry and the totals use one amount');
 });
