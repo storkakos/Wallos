@@ -192,7 +192,7 @@ services:
 Recurring items can be marked as income. To run it on a Docker host, build the image from this repository:
 
 ```
-git pull && docker compose up -d --build
+git pull && APK_CACHE_BUST=$(date +%s) docker compose build --pull && docker compose up -d
 ```
 
 > [!WARNING]

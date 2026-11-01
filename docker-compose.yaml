@@ -1,7 +1,10 @@
 services:
   wallos:
     container_name: wallos
-    build: .
+    build:
+      context: .
+      args:
+        APK_CACHE_BUST: ${APK_CACHE_BUST:-}
     image: wallos-income:local
     ports:
       - "8282:80/tcp"
