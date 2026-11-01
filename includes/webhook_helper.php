@@ -1,6 +1,19 @@
 <?php
 
 /**
+ * Records a notification channel that failed, so the caller can carry on with
+ * the next channel and the next user instead of ending the whole cron run.
+ *
+ * @param string    $channel
+ * @param Throwable $error
+ */
+function report_notification_failure($channel, Throwable $error)
+{
+    error_log("Wallos notification failed ($channel): " . $error->getMessage());
+    echo htmlspecialchars("$channel notification failed: " . $error->getMessage(), ENT_QUOTES, 'UTF-8') . "<br />";
+}
+
+/**
  * Escapes a value for safe interpolation into a JSON string field via plain
  * str_replace() templating (the webhook payload template uses
  * "{{placeholder}}" substitution, not real JSON building).
