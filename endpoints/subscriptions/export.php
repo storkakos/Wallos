@@ -54,6 +54,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
         'Notifications' => $row['notify'] ? 'Enabled' : 'Disabled',
         'Cancellation Date' => $row['cancellation_date'],
         'Active' => $row['inactive'] ? 'No' : 'Yes',
+        'Type' => ($row['type'] ?? 'expense') === 'income' ? 'Income' : 'Expense',
     );
 
     $subscriptions[] = $subscriptionDetails;

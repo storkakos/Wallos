@@ -9,6 +9,11 @@
 .gitignore
 .dockerignore
 
+# Runtime data lives in the volumes and must not end up in an image built on a host
+/db/*.db
+!/db/wallos.empty.db
+/logos/
+
 # README screenshots and capture script; not used at runtime
 /screenshots/
 

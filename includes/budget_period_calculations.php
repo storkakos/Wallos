@@ -270,7 +270,7 @@ if (!function_exists('computeAmountNeededInPeriod')) {
 
         foreach ($subscriptions as $subscription) {
             $isActive = isset($subscription['inactive']) && (int) $subscription['inactive'] === 0;
-            if (!$isActive) {
+            if (!$isActive || ($subscription['type'] ?? 'expense') === 'income') {
                 continue;
             }
 

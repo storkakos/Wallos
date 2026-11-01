@@ -143,7 +143,7 @@ foreach ($allAiSettings as $aiSettings) {
     $userLanguageName = $languages[$userLanguage]['name'] ?? 'English';
 
     // Subscriptions
-    $subStmt = $db->prepare("SELECT * FROM subscriptions WHERE user_id = :user_id AND inactive = 0");
+    $subStmt = $db->prepare("SELECT * FROM subscriptions WHERE user_id = :user_id AND inactive = 0 AND type = 'expense'");
     $subStmt->bindValue(':user_id', $tempUserId, SQLITE3_INTEGER);
     $subResult = $subStmt->execute();
     $subscriptions = [];

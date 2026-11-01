@@ -853,6 +853,10 @@ body.light img.logo-theme-variant[data-native-theme="dark"] {
   overflow-wrap: break-word;
 }
 
+.subscription.income .price .value {
+  color: var(--success-color);
+}
+
 .subscription .price .original_price {
   font-size: 14px;
   color: var(--text-muted);

@@ -547,6 +547,15 @@ $i18n = [
     "payment_method_bank_transfer" => "Bank Transfer",
     "payment_method_direct_debit" => "Direct Debit",
     "payment_method_money" => "Money",
+    // Income and expenses
+    "entry_type" => "Type",
+    "expense" => "Expense",
+    "income" => "Income",
+    "income_and_balance" => "Income and Balance",
+    "monthly_income" => "Monthly Income",
+    "yearly_income" => "Yearly Income",
+    "monthly_balance" => "Monthly Balance",
+    "yearly_balance" => "Yearly Balance",
 ];
 
 

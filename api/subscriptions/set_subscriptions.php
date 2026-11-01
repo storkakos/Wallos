@@ -29,6 +29,7 @@ For 'add' and 'edit' actions (all optional for 'edit'):
 - inactive: whether the subscription is inactive (1 or 0).
 - cancellation_date: the cancellation date (YYYY-MM-DD).
 - replacement_subscription_id: the ID of the replacement subscription (integer).
+- type: 'income' or 'expense' (string). Anything else is stored as 'expense'. Defaults to 'expense' on 'add'; left unchanged on 'edit' when omitted.
 
 It returns a JSON object with the following properties:
 - success: whether the request was successful (boolean).
@@ -401,6 +402,8 @@ switch ($action) {
             $replacementSubscriptionId = null;
         }
 
+        $type = ($_POST['type'] ?? '') === 'income' ? 'income' : 'expense';
+
         // Validate required fields
         if (!$name || trim($name) === '' || $price === null || !$currencyId || !$frequency || !$cycle || !$nextPayment) {
             echo json_encode([
@@ -544,12 +547,12 @@ switch ($action) {
                             name, logo, price, currency_id, next_payment, cycle, frequency, notes,
                             payment_method_id, payer_user_id, category_id, notify, inactive, url,
                             notify_days_before, user_id, cancellation_date, replacement_subscription_id,
-                            auto_renew, start_date, logo_text_color, logo_variant
+                            auto_renew, start_date, logo_text_color, logo_variant, type
                         ) VALUES (
                             :name, :logo, :price, :currencyId, :nextPayment, :cycle, :frequency, :notes,
                             :paymentMethodId, :payerUserId, :categoryId, :notify, :inactive, :url,
                             :notifyDaysBefore, :userId, :cancellationDate, :replacement_subscription_id,
-                            :autoRenew, :startDate, :logoTextColor, :logoVariant
+                            :autoRenew, :startDate, :logoTextColor, :logoVariant, :type
                         )";
         $stmtInsert = $db->prepare($sqlInsert);
         $stmtInsert->bindParam(':name', $name, SQLITE3_TEXT);
@@ -574,6 +577,7 @@ switch ($action) {
         $stmtInsert->bindParam(':replacement_subscription_id', $replacementSubscriptionId, SQLITE3_INTEGER);
         $stmtInsert->bindParam(':autoRenew', $autoRenew, SQLITE3_INTEGER);
         $stmtInsert->bindParam(':startDate', $startDate, SQLITE3_TEXT);
+        $stmtInsert->bindParam(':type', $type, SQLITE3_TEXT);
 
         if ($stmtInsert->execute()) {
             $newSubscriptionId = $db->lastInsertRowID();
@@ -694,6 +698,11 @@ switch ($action) {
 
         if ($replacementSubscriptionId == 0 || $inactive == 0) {
             $replacementSubscriptionId = null;
+        }
+
+        $type = $subscription['type'];
+        if (isset($_POST['type'])) {
+            $type = $_POST['type'] === 'income' ? 'income' : 'expense';
         }
 
         // Validate values
@@ -865,7 +874,8 @@ switch ($action) {
                             url = :url,
                             notify_days_before = :notifyDaysBefore,
                             cancellation_date = :cancellationDate,
-                            replacement_subscription_id = :replacement_subscription_id
+                            replacement_subscription_id = :replacement_subscription_id,
+                            type = :type
                        WHERE id = :id AND user_id = :userId";
 
         $stmtUpdate = $db->prepare($sqlUpdate);
@@ -890,6 +900,7 @@ switch ($action) {
         $stmtUpdate->bindParam(':notifyDaysBefore', $notifyDaysBefore, SQLITE3_INTEGER);
         $stmtUpdate->bindParam(':cancellationDate', $cancellationDate, SQLITE3_TEXT);
         $stmtUpdate->bindParam(':replacement_subscription_id', $replacementSubscriptionId, SQLITE3_INTEGER);
+        $stmtUpdate->bindParam(':type', $type, SQLITE3_TEXT);
         $stmtUpdate->bindParam(':id', $subscriptionId, SQLITE3_INTEGER);
         $stmtUpdate->bindParam(':userId', $userId, SQLITE3_INTEGER);
 

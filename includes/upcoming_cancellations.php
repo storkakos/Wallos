@@ -13,7 +13,7 @@
  */
 function get_upcoming_cancellations($db, $userId)
 {
-    $stmt = $db->prepare("SELECT id, logo, logo_text_color, logo_variant, name, price, currency_id, cycle, frequency, cancellation_date
+    $stmt = $db->prepare("SELECT id, logo, logo_text_color, logo_variant, name, price, currency_id, cycle, frequency, cancellation_date, type
         FROM subscriptions
         WHERE user_id = :userId
           AND inactive = 0
@@ -49,6 +49,10 @@ function get_upcoming_cancellations_monthly_value($cancellations, $db, $userId)
     $total = 0;
 
     foreach ($cancellations as $subscription) {
+        if (($subscription['type'] ?? 'expense') === 'income') {
+            continue;
+        }
+
         $perMonth = getPricePerMonth($subscription['cycle'], $subscription['frequency'], $subscription['price']);
         $total += getPriceConverted($perMonth, $subscription['currency_id'], $db, $userId);
     }

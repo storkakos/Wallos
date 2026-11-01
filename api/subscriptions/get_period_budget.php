@@ -102,7 +102,7 @@ $anchorDate = sanitizeBudgetAnchorDate($user['budget_period_anchor_date'] ?? get
 
 $activePeriod = getActiveBudgetPeriod($referenceDate, $periodType, $anchorDate);
 
-$subsSql = "SELECT * FROM subscriptions WHERE user_id = :userId AND inactive = 0";
+$subsSql = "SELECT * FROM subscriptions WHERE user_id = :userId AND inactive = 0 AND type = 'expense'";
 $subsStmt = $db->prepare($subsSql);
 $subsStmt->bindValue(':userId', $userId, SQLITE3_INTEGER);
 $subsResult = $subsStmt->execute();

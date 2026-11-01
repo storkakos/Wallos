@@ -80,7 +80,7 @@ require_once '../../includes/i18n/languages.php';
 $userLanguageName = $languages[$userLanguage]['name'] ?? 'English';
 
 // Subscriptions
-$stmt = $db->prepare("SELECT * FROM subscriptions WHERE user_id = :user_id AND inactive = 0");
+$stmt = $db->prepare("SELECT * FROM subscriptions WHERE user_id = :user_id AND inactive = 0 AND type = 'expense'");
 $stmt->bindValue(':user_id', $userId, SQLITE3_INTEGER);
 $result = $stmt->execute();
 

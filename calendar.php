@@ -204,6 +204,10 @@ if ($weekStartsSunday) {
 
     $registerPayment = function ($date, $subscription) use (&$paymentsByDay, &$totalCostThisMonth, &$numberOfSubscriptionsToPayThisMonth, &$amountDueThisMonth, $today, $db, $userId) {
       $paymentsByDay[(int) date('j', $date)][] = $subscription;
+      // Income shows on its day but is not something to pay
+      if ($subscription['type'] === 'income') {
+        return;
+      }
       $convertedPrice = getPriceConverted($subscription['price'], $subscription['currency_id'], $db, $userId);
       $totalCostThisMonth += $convertedPrice;
       $numberOfSubscriptionsToPayThisMonth++;

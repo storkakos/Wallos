@@ -145,6 +145,8 @@ function initMultiSelects() {
 function resetForm() {
   const id = document.querySelector("#id");
   id.value = "";
+  const typeSelect = document.querySelector("#type");
+  typeSelect.value = "expense";
   const formTitle = document.querySelector("#form-title");
   formTitle.textContent = translate('add_subscription');
   const logo = document.querySelector("#form-logo");
@@ -203,6 +205,8 @@ function fillEditFormFields(subscription) {
   logoSearchButton.classList.remove("disabled");
   const id = document.querySelector("#id");
   id.value = subscription.id;
+  const typeSelect = document.querySelector("#type");
+  typeSelect.value = subscription.type;
   const name = document.querySelector("#name");
   name.value = subscription.name;
   const price = document.querySelector("#price");
