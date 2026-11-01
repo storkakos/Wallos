@@ -28,8 +28,15 @@ $result = $stmt->execute();
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $subscriptionId = $row['id'];
     $nextPaymentDate = new DateTime($row['next_payment']);
-    $frequency = $row['frequency'];
-    $cycle = $cycles[$row['cycle']]['name'];
+    $frequency = (int) $row['frequency'];
+    $cycle = $cycles[$row['cycle']]['name'] ?? null;
+
+    // A row saved before frequency was validated must not stall this loop for
+    // every other user: 0 never advances the date, and a negative value or a
+    // cycle without a unit (one-time) is not a valid interval.
+    if ($frequency < 1 || !in_array($cycle, ['Daily', 'Weekly', 'Monthly', 'Yearly'], true)) {
+        continue;
+    }
 
     // Calculate the interval to add based on the cycle
     $intervalSpec = "P";

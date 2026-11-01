@@ -418,6 +418,14 @@ switch ($action) {
         $price = floatval($price);
         $currencyId = intval($currencyId);
         $frequency = intval($frequency);
+        if ($frequency < 1 || $frequency > 366) {
+            echo json_encode([
+                'success' => false,
+                'title' => 'Invalid frequency',
+                'message' => 'Parameter "frequency" must be an integer from 1 to 366.'
+            ]);
+            exit;
+        }
         $cycle = intval($cycle);
 
         if (!in_array($cycle, [1, 2, 3, 4], true)) {
@@ -636,6 +644,14 @@ switch ($action) {
         $price = isset($_POST['price']) ? floatval($_POST['price']) : $subscription['price'];
         $currencyId = isset($_POST['currency_id']) ? intval($_POST['currency_id']) : $subscription['currency_id'];
         $frequency = isset($_POST['frequency']) ? intval($_POST['frequency']) : $subscription['frequency'];
+        if ($frequency < 1 || $frequency > 366) {
+            echo json_encode([
+                'success' => false,
+                'title' => 'Invalid frequency',
+                'message' => 'Parameter "frequency" must be an integer from 1 to 366.'
+            ]);
+            exit;
+        }
         $cycle = isset($_POST['cycle']) ? intval($_POST['cycle']) : $subscription['cycle'];
         $nextPayment = isset($_POST['next_payment']) ? $_POST['next_payment'] : $subscription['next_payment'];
         
