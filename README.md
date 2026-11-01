@@ -1,3 +1,6 @@
+> [!NOTE]
+> **Personalized fork of [Wallos](https://github.com/ellite/Wallos).** Adds a `type` to subscriptions to distinguish income from expenses, with a monthly and yearly balance.
+
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./images/siteicons/walloswhite.png">
