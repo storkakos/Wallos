@@ -203,9 +203,9 @@ Manual test checklist:
 - [ ] Create one expense and one income.
 - [ ] Edit an entry and switch its type; the form loads the stored type and the change is saved.
 - [ ] Clone an income; the clone is income too.
-- [ ] The list shows income with a green "+" before the price.
-- [ ] Statistics show "Income and Balance" with the correct balance (income minus cost), and the cost figures do not change when income is added.
-- [ ] `api/subscriptions/get_monthly_cost.php` excludes income.
+- [ ] The list shows income in green with a "+" and expenses in red with a "-".
+- [ ] The dashboard and statistics show "Income and Expenses" with the correct balance (income minus expenses), and the expense figures do not change when income is added.
+- [ ] `api/subscriptions/get_monthly_cost.php` keeps income out of `monthly_cost` and returns it as `monthly_income`, with `monthly_balance`.
 - [ ] An old database migrates on start and its existing entries remain expenses.
 
 ## Usage
